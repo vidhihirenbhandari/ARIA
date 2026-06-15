@@ -69,6 +69,25 @@ class ApiClient {
   }) =>
       _dio.patch<T>(path, data: data, options: options);
 
+  Stream<String> streamPost(String path, {required dynamic data}) async* {
+    final response = await _dio.post<ResponseBody>(
+      path,
+      data: data,
+      options: Options(responseType: ResponseType.stream),
+    );
+    final stream = response.data?.stream;
+    if (stream == null) return;
+    await for (final chunk in stream) {
+      final text = String.fromCharCodes(chunk);
+      for (final line in text.split('\n')) {
+        if (line.startsWith('data: ')) {
+          final content = line.substring(6).trim();
+          if (content.isNotEmpty && content != '[DONE]') yield content;
+        }
+      }
+    }
+  }
+
   Stream<String> streamChat(String message, String conversationId) async* {
     final response = await _dio.post<ResponseBody>(
       '/chat/stream',
