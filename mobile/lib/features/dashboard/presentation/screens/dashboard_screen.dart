@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_event.dart';
+import '../../data/briefing_repository.dart';
+import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
 import '../widgets/upcoming_events_widget.dart';
 import '../widgets/pending_suggestions_widget.dart';
@@ -16,22 +18,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  // Sample data for demonstration
-  final List<Map<String, dynamic>> _pendingSuggestions = [
-    {
-      'title': 'Meeting with John',
-      'description': 'Detected from WhatsApp: "Let\'s meet tomorrow at 3 PM"',
-      'confidence': 0.92,
-      'type': 'meeting',
-    },
-    {
-      'title': 'Flight to Mumbai',
-      'description': 'Detected from email: IndiGo booking confirmation',
-      'confidence': 0.97,
-      'type': 'travel',
-    },
-  ];
-
+  // Today's calendar events — Phase 2 will pull from calendar API
   final List<Event> _todayEvents = [
     Event(
       id: '1',
@@ -72,31 +59,75 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final briefingAsync = ref.watch(dailyBriefingProvider);
+    final suggestionsAsync = ref.watch(pendingSuggestionsProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
+          // Daily briefing card — live from API with shimmer fallback
           SliverToBoxAdapter(
-            child: DailyBriefingCard(
-              assistantName: 'ARIA',
-              greeting: '$_greeting, Vidhi',
-              summary:
-                  'You have ${_todayEvents.length} meetings today and ${_pendingSuggestions.length} items waiting for your approval.',
-              meetingsCount: _todayEvents.length,
-              tasksCount: 4,
-              pendingCount: _pendingSuggestions.length,
-            ),
-          ),
-          if (_pendingSuggestions.isNotEmpty)
-            SliverToBoxAdapter(
-              child: PendingSuggestionsWidget(
-                suggestions: _pendingSuggestions,
-                onApprove: (s) => setState(() => _pendingSuggestions.remove(s)),
-                onIgnore: (s) => setState(() => _pendingSuggestions.remove(s)),
+            child: briefingAsync.when(
+              data: (briefing) => DailyBriefingCard(
+                assistantName: 'ARIA',
+                greeting: '${briefing.greeting}, Vidhi',
+                summary: briefing.summary.isNotEmpty
+                    ? briefing.summary
+                    : 'You have ${_todayEvents.length} meetings today.',
+                meetingsCount: briefing.meetingsCount > 0
+                    ? briefing.meetingsCount
+                    : _todayEvents.length,
+                tasksCount: briefing.tasksCount,
+                pendingCount: briefing.pendingCount,
+              ),
+              loading: () => _buildBriefingShimmer(),
+              error: (_, __) => DailyBriefingCard(
+                assistantName: 'ARIA',
+                greeting: '$_greeting, Vidhi',
+                summary: 'You have ${_todayEvents.length} meetings today.',
+                meetingsCount: _todayEvents.length,
+                tasksCount: 0,
+                pendingCount: 0,
               ),
             ),
+          ),
+          // Pending suggestions — live from API
+          SliverToBoxAdapter(
+            child: suggestionsAsync.when(
+              data: (suggestions) {
+                if (suggestions.isEmpty) return const SizedBox.shrink();
+                final mapped = suggestions
+                    .map((e) => {
+                          'id': e.id,
+                          'title': e.title,
+                          'description': e.description ?? '',
+                          'confidence': e.confidenceScore ?? 0.9,
+                          'type': e.source,
+                        })
+                    .toList();
+                return PendingSuggestionsWidget(
+                  suggestions: mapped,
+                  onApprove: (s) async {
+                    await ref
+                        .read(eventsRepositoryProvider)
+                        .approveEvent(s['id'] as String);
+                    ref.invalidate(pendingSuggestionsProvider);
+                  },
+                  onIgnore: (s) async {
+                    await ref
+                        .read(eventsRepositoryProvider)
+                        .rejectEvent(s['id'] as String);
+                    ref.invalidate(pendingSuggestionsProvider);
+                  },
+                );
+              },
+              loading: () => _buildSuggestionsShimmer(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+          ),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
           SliverToBoxAdapter(
             child: UpcomingEventsWidget(events: _todayEvents),
@@ -107,6 +138,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       floatingActionButton: _buildFAB(),
+    );
+  }
+
+  Widget _buildBriefingShimmer() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 140,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsShimmer() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      height: 80,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
     );
   }
 

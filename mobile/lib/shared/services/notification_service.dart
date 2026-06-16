@@ -1,10 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-final notificationServiceProvider = Provider<NotificationService>((ref) {
-  return NotificationService();
-});
-
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Handle background messages
@@ -13,33 +9,19 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
-  Future<void> init() async {
+  Future<void> initialize({
+    required Function(RemoteMessage) onMessage,
+    required Function(RemoteMessage) onMessageOpenedApp,
+  }) async {
+    await _messaging.requestPermission(alert: true, badge: true, sound: true);
+
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-    await _messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
+    FirebaseMessaging.onMessage.listen(onMessage);
+    FirebaseMessaging.onMessageOpenedApp.listen(onMessageOpenedApp);
   }
 
   Future<String?> getToken() async {
-    return _messaging.getToken();
-  }
-
-  void _handleForegroundMessage(RemoteMessage message) {
-    // Handle foreground notification
-  }
-
-  void _handleMessageOpenedApp(RemoteMessage message) {
-    // Handle notification tap when app was in background
+    return await _messaging.getToken();
   }
 
   Future<void> subscribeToTopic(String topic) async {
@@ -50,3 +32,5 @@ class NotificationService {
     await _messaging.unsubscribeFromTopic(topic);
   }
 }
+
+final notificationServiceProvider = Provider<NotificationService>((_) => NotificationService());

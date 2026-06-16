@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_travel.dart';
+import '../../data/travel_repository.dart';
 import '../widgets/travel_suggestion_card.dart';
 
 class TravelScreen extends ConsumerStatefulWidget {
@@ -13,38 +14,6 @@ class TravelScreen extends ConsumerStatefulWidget {
 }
 
 class _TravelScreenState extends ConsumerState<TravelScreen> {
-  final List<TravelBooking> _bookings = [
-    TravelBooking(
-      id: '1',
-      userId: 'u1',
-      type: 'flight',
-      departureTime: DateTime.now().add(const Duration(days: 1, hours: 7)),
-      status: 'confirmed',
-      details: {
-        'airline': 'IndiGo',
-        'flightNumber': '6E-203',
-        'from': 'DEL',
-        'to': 'BOM',
-        'seat': '14A',
-        'bookingRef': 'IND7X3',
-      },
-    ),
-    TravelBooking(
-      id: '2',
-      userId: 'u1',
-      type: 'hotel',
-      departureTime: DateTime.now().add(const Duration(days: 1)),
-      status: 'confirmed',
-      details: {
-        'hotel': 'Taj Hotel Mumbai',
-        'checkIn': 'Jan 17',
-        'checkOut': 'Jan 19',
-        'roomType': 'Superior Room',
-        'bookingRef': 'TAJ2847',
-      },
-    ),
-  ];
-
   final List<Map<String, dynamic>> _suggestions = [
     {
       'title': 'Set Wake-Up Alarm',
@@ -74,6 +43,8 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bookingsAsync = ref.watch(upcomingTravelProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -89,16 +60,27 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildUpcomingTrip(),
+            // Upcoming trip hero — driven by first booking from API
+            bookingsAsync.when(
+              data: (bookings) {
+                final flight = bookings.where((b) => b.type == 'flight').firstOrNull;
+                if (flight != null) {
+                  return _buildUpcomingTripFromBooking(flight);
+                }
+                return _buildNoUpcomingTrip();
+              },
+              loading: () => _buildTripShimmer(),
+              error: (_, __) => _buildNoUpcomingTrip(),
+            ),
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
               child: Text('ARIA Suggests', style: AppTextStyles.headlineSmall),
             ),
             ..._suggestions.asMap().entries.map((e) => TravelSuggestionCard(
-                  title: e.value['title'],
-                  subtitle: e.value['subtitle'],
-                  icon: e.value['icon'],
-                  accentColor: e.value['color'],
+                  title: e.value['title'] as String,
+                  subtitle: e.value['subtitle'] as String,
+                  icon: e.value['icon'] as IconData,
+                  accentColor: e.value['color'] as Color,
                   onApprove: () => setState(() => _suggestions.removeAt(e.key)),
                   onDismiss: () => setState(() => _suggestions.removeAt(e.key)),
                 )),
@@ -106,7 +88,21 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
               padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
               child: Text('Your Bookings', style: AppTextStyles.headlineSmall),
             ),
-            ..._bookings.map((b) => _buildBookingCard(b)),
+            // Bookings list from API
+            bookingsAsync.when(
+              data: (bookings) {
+                if (bookings.isEmpty) {
+                  return _buildNoBookings();
+                }
+                return Column(
+                  children: bookings.map((b) => _buildBookingCard(b)).toList(),
+                );
+              },
+              loading: () => Column(
+                children: List.generate(2, (_) => _buildBookingShimmer()),
+              ),
+              error: (_, __) => _buildNoBookings(),
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -114,7 +110,69 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
     );
   }
 
-  Widget _buildUpcomingTrip() {
+  Widget _buildTripShimmer() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      height: 180,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
+    );
+  }
+
+  Widget _buildBookingShimmer() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      height: 72,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+    );
+  }
+
+  Widget _buildNoUpcomingTrip() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: const Center(
+        child: Text(
+          'No upcoming flights',
+          style: AppTextStyles.bodyMedium,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoBookings() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Text(
+        'No confirmed bookings found.',
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingTripFromBooking(TravelBooking booking) {
+    final airline = booking.details['airline'] as String? ?? '';
+    final flightNumber = booking.details['flightNumber'] as String? ?? '';
+    final from = booking.details['from'] as String? ?? '---';
+    final to = booking.details['to'] as String? ?? '---';
+    final dep = booking.departureTime;
+    final depTime =
+        '${dep.hour.toString().padLeft(2, '0')}:${dep.minute.toString().padLeft(2, '0')}';
+    final arr = booking.arrivalTime;
+    final arrTime = arr != null
+        ? '${arr.hour.toString().padLeft(2, '0')}:${arr.minute.toString().padLeft(2, '0')}'
+        : '';
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.all(20),
@@ -146,7 +204,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
                 children: [
                   const Text('Upcoming Trip', style: AppTextStyles.headlineSmall),
                   Text(
-                    'Tomorrow · IndiGo 6E-203',
+                    'Tomorrow · $airline $flightNumber',
                     style: AppTextStyles.caption.copyWith(color: AppColors.accent),
                   ),
                 ],
@@ -157,7 +215,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildAirport('DEL', 'Delhi', '7:00 AM'),
+              _buildAirport(from, from, depTime),
               Expanded(
                 child: Column(
                   children: [
@@ -176,12 +234,14 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Icon(Icons.flight, color: AppColors.accent, size: 16),
-                    const SizedBox(height: 4),
-                    Text('2h 15m', style: AppTextStyles.caption),
+                    if (arrTime.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(arrTime, style: AppTextStyles.caption),
+                    ],
                   ],
                 ),
               ),
-              _buildAirport('BOM', 'Mumbai', '9:15 AM'),
+              _buildAirport(to, to, arrTime),
             ],
           ),
         ],
@@ -233,15 +293,15 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
               children: [
                 Text(
                   isHotel
-                      ? booking.details['hotel'] as String
-                      : '${booking.details['airline']} ${booking.details['flightNumber']}',
+                      ? (booking.details['hotel'] as String? ?? 'Hotel')
+                      : '${booking.details['airline'] ?? ''} ${booking.details['flightNumber'] ?? ''}',
                   style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   isHotel
-                      ? '${booking.details['checkIn']} → ${booking.details['checkOut']}'
-                      : '${booking.details['from']} → ${booking.details['to']}',
+                      ? '${booking.details['checkIn'] ?? ''} → ${booking.details['checkOut'] ?? ''}'
+                      : '${booking.details['from'] ?? ''} → ${booking.details['to'] ?? ''}',
                   style: AppTextStyles.caption,
                 ),
               ],

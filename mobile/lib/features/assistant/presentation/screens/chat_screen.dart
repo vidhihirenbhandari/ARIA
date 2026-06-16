@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_conversation.dart';
+import '../../../../shared/services/voice_service.dart';
+import '../../data/events_repository.dart';
 import '../providers/chat_provider.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/typing_indicator.dart';
@@ -20,26 +22,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isRecording = false;
+  bool _isListeningOverlay = false;
 
-  final List<Map<String, dynamic>> _suggestions = [
-    {
-      'title': 'Meeting Detected',
-      'confidence': 0.92,
-      'source': 'WhatsApp',
-      'details': {
-        'Person': 'John',
-        'Date': 'Tomorrow',
-        'Time': '3:00 PM',
-        'Location': 'Not specified',
-      },
-    },
-  ];
+  // Suggestions loaded from API; fallback to empty list
+  List<Map<String, dynamic>> _suggestions = [];
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(chatProvider.notifier).initConversation();
+      _loadSuggestions();
     });
   }
 
@@ -48,6 +41,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSuggestions() async {
+    try {
+      final events = await ref.read(eventsRepositoryProvider).getPendingEvents();
+      if (!mounted) return;
+      setState(() {
+        _suggestions = events
+            .map((e) => {
+                  'id': e.id,
+                  'title': e.title,
+                  'confidence': e.confidenceScore ?? 0.9,
+                  'source': e.source,
+                  'details': {
+                    'Description': e.description ?? '',
+                    'Date': e.startTime.toLocal().toString().substring(0, 10),
+                    'Time':
+                        '${e.startTime.hour.toString().padLeft(2, '0')}:${e.startTime.minute.toString().padLeft(2, '0')}',
+                    if (e.location != null) 'Location': e.location!,
+                  },
+                })
+            .toList();
+      });
+    } catch (_) {
+      // Leave suggestions empty on error
+    }
   }
 
   void _scrollToBottom() {
@@ -70,6 +89,50 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollToBottom();
   }
 
+  Future<void> _startVoiceRecording() async {
+    final voiceService = ref.read(voiceServiceProvider);
+    setState(() {
+      _isRecording = true;
+      _isListeningOverlay = true;
+    });
+    try {
+      final transcript = await voiceService.listen();
+      if (!mounted) return;
+      setState(() {
+        _isRecording = false;
+        _isListeningOverlay = false;
+      });
+      if (transcript != null && transcript.trim().isNotEmpty) {
+        _textController.text = transcript;
+        _sendMessage();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isRecording = false;
+        _isListeningOverlay = false;
+      });
+    }
+  }
+
+  Future<void> _stopVoiceRecording() async {
+    final voiceService = ref.read(voiceServiceProvider);
+    await voiceService.stopListening();
+    if (!mounted) return;
+    setState(() {
+      _isRecording = false;
+      _isListeningOverlay = false;
+    });
+  }
+
+  void _handleVoiceTap() {
+    if (_isRecording) {
+      _stopVoiceRecording();
+    } else {
+      _startVoiceRecording();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
@@ -83,15 +146,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
-      body: Column(
+      body: Stack(
         children: [
-          if (_suggestions.isNotEmpty) _buildSuggestionsBar(),
-          Expanded(
-            child: chatState.messages.isEmpty && !chatState.isStreaming
-                ? _buildEmptyState()
-                : _buildMessageList(chatState),
+          Column(
+            children: [
+              if (_suggestions.isNotEmpty) _buildSuggestionsBar(),
+              Expanded(
+                child: chatState.messages.isEmpty && !chatState.isStreaming
+                    ? _buildEmptyState()
+                    : _buildMessageList(chatState),
+              ),
+              _buildInputBar(chatState),
+            ],
           ),
-          _buildInputBar(chatState),
+          if (_isListeningOverlay) _buildListeningOverlay(),
         ],
       ),
     );
@@ -216,21 +284,63 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
             ..._suggestions.map((s) => SuggestionCard(
-                  title: s['title'],
-                  confidence: s['confidence'],
-                  details: Map<String, String>.from(s['details']),
-                  source: s['source'],
-                  onApprove: () {
+                  title: s['title'] as String,
+                  confidence: (s['confidence'] as num).toDouble(),
+                  details: Map<String, String>.from(
+                    (s['details'] as Map<String, dynamic>).map(
+                      (k, v) => MapEntry(k, v.toString()),
+                    ),
+                  ),
+                  source: s['source'] as String,
+                  onApprove: () async {
+                    final id = s['id'] as String;
+                    await ref.read(eventsRepositoryProvider).approveEvent(id);
                     setState(() => _suggestions.remove(s));
-                    Navigator.pop(context);
+                    if (mounted) Navigator.pop(context);
                   },
-                  onIgnore: () {
+                  onIgnore: () async {
+                    final id = s['id'] as String;
+                    await ref.read(eventsRepositoryProvider).rejectEvent(id);
                     setState(() => _suggestions.remove(s));
-                    Navigator.pop(context);
+                    if (mounted) Navigator.pop(context);
                   },
                 )),
             const SizedBox(height: 24),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildListeningOverlay() {
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.6),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.mic, color: Colors.white, size: 40),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Listening...',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap mic to stop',
+                style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -371,7 +481,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ),
                   VoiceInputButton(
                     isRecording: _isRecording,
-                    onTap: () => setState(() => _isRecording = !_isRecording),
+                    onTap: _handleVoiceTap,
+                    onLongPressStart: _startVoiceRecording,
+                    onLongPressEnd: _stopVoiceRecording,
                   ),
                   const SizedBox(width: 4),
                 ],
