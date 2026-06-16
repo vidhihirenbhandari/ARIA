@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../shared/models/conversation.dart';
+import '../../../../shared/models/aria_conversation.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;

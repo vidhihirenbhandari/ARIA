@@ -28,7 +28,7 @@ class PermissionsScreen extends ConsumerWidget {
         children: [
           _buildSection('Calendar & Events', [
             _PermissionItem(
-              key: 'calendar',
+              itemKey: 'calendar',
               icon: Icons.calendar_today_outlined,
               title: 'Calendar Access',
               subtitle: 'Read and create calendar events',
@@ -38,7 +38,7 @@ class PermissionsScreen extends ConsumerWidget {
           ]),
           _buildSection('Communications', [
             _PermissionItem(
-              key: 'whatsapp',
+              itemKey: 'whatsapp',
               icon: Icons.chat_outlined,
               title: 'WhatsApp Analysis',
               subtitle: 'Detect meeting plans from messages',
@@ -46,7 +46,7 @@ class PermissionsScreen extends ConsumerWidget {
               onToggle: () => notifier.toggle('whatsapp'),
             ),
             _PermissionItem(
-              key: 'email',
+              itemKey: 'email',
               icon: Icons.email_outlined,
               title: 'Email Analysis',
               subtitle: 'Detect travel bookings and meetings',
@@ -54,7 +54,7 @@ class PermissionsScreen extends ConsumerWidget {
               onToggle: () => notifier.toggle('email'),
             ),
             _PermissionItem(
-              key: 'sms',
+              itemKey: 'sms',
               icon: Icons.sms_outlined,
               title: 'SMS Access',
               subtitle: 'Read OTPs and booking confirmations',
@@ -64,7 +64,7 @@ class PermissionsScreen extends ConsumerWidget {
           ]),
           _buildSection('Device', [
             _PermissionItem(
-              key: 'callLog',
+              itemKey: 'callLog',
               icon: Icons.call_outlined,
               title: 'Call Log Access',
               subtitle: 'Remember people you frequently call',
@@ -72,7 +72,7 @@ class PermissionsScreen extends ConsumerWidget {
               onToggle: () => notifier.toggle('callLog'),
             ),
             _PermissionItem(
-              key: 'location',
+              itemKey: 'location',
               icon: Icons.location_on_outlined,
               title: 'Location Access',
               subtitle: 'Traffic alerts and location-based reminders',
@@ -82,7 +82,7 @@ class PermissionsScreen extends ConsumerWidget {
           ]),
           _buildSection('AI & Memory', [
             _PermissionItem(
-              key: 'memory',
+              itemKey: 'memory',
               icon: Icons.psychology_outlined,
               title: 'Memory Storage',
               subtitle: 'Remember commitments and important conversations',
@@ -90,7 +90,7 @@ class PermissionsScreen extends ConsumerWidget {
               onToggle: () => notifier.toggle('memory'),
             ),
             _PermissionItem(
-              key: 'travel',
+              itemKey: 'travel',
               icon: Icons.flight_outlined,
               title: 'Travel Detection',
               subtitle: 'Auto-detect travel bookings from email',
@@ -226,7 +226,7 @@ class PermissionsScreen extends ConsumerWidget {
 }
 
 class _PermissionItem extends StatelessWidget {
-  final String key;
+  final String itemKey;
   final IconData icon;
   final String title;
   final String subtitle;
@@ -234,7 +234,7 @@ class _PermissionItem extends StatelessWidget {
   final VoidCallback onToggle;
 
   const _PermissionItem({
-    required this.key,
+    required this.itemKey,
     required this.icon,
     required this.title,
     required this.subtitle,

@@ -67,6 +67,8 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
     return result;
   }
 
+  void _addMemory() {}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
