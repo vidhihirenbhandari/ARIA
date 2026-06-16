@@ -64,12 +64,12 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
 
-  # Celery worker for background tasks (event reminders, etc.)
+  # Celery worker — processes background tasks (event detection, travel parsing, etc.)
   worker:
     build:
       context: .
       dockerfile: Dockerfile
-    command: celery -A app.worker worker --loglevel=info
+    command: celery -A app.workers.celery_app.celery_app worker --loglevel=info --concurrency=4
     env_file:
       - .env
     environment:
@@ -77,11 +77,35 @@ services:
       REDIS_URL: redis://redis:6379
       QDRANT_URL: http://qdrant:6333
     depends_on:
-      - api
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+
+  # Celery beat — scheduler for periodic tasks (daily briefings, cleanup)
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A app.workers.celery_app.celery_app beat --loglevel=info --scheduler celery.beat:PersistentScheduler
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://aria:aria@postgres:5432/aria
+      REDIS_URL: redis://redis:6379
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - celery_beat_data:/app/celerybeat-schedule
 
 volumes:
   postgres_data:
   qdrant_data:
   redis_data:
+  celery_beat_data:

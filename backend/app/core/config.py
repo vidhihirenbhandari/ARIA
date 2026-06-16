@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,8 +54,13 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRY_HOURS: int = 24 * 7  # 7 days
 
-    # Redis
+    # Redis / Celery
     REDIS_URL: str = "redis://localhost:6379"
+    CELERY_BROKER_URL: str = Field(default="redis://localhost:6379/0")
+
+    # WhatsApp Cloud API
+    WHATSAPP_VERIFY_TOKEN: str = ""
+    WHATSAPP_APP_SECRET: str = ""
 
     # CORS
     ALLOWED_ORIGINS: List[str] = ["*"]
@@ -67,3 +73,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Return the global settings singleton (useful for dependency injection)."""
+    return settings
