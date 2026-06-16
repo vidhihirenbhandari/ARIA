@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/services/api_client.dart';
+import '../../../shared/services/local_storage.dart';
+import '../../../shared/demo/demo_data.dart';
 
 class DailyBriefing {
   final String greeting;
@@ -40,9 +42,11 @@ class DailyBriefing {
 
 class BriefingRepository {
   final ApiClient _client;
-  BriefingRepository(this._client);
+  final bool isDemoMode;
+  BriefingRepository(this._client, {this.isDemoMode = false});
 
   Future<DailyBriefing> getTodaysBriefing() async {
+    if (isDemoMode) return DemoData.briefing;
     try {
       final response = await _client.get('/briefing/today');
       return DailyBriefing.fromJson(response.data as Map<String, dynamic>);
@@ -53,7 +57,8 @@ class BriefingRepository {
 }
 
 final briefingRepositoryProvider = Provider<BriefingRepository>((ref) {
-  return BriefingRepository(ref.read(apiClientProvider));
+  final storage = ref.read(localStorageProvider);
+  return BriefingRepository(ref.read(apiClientProvider), isDemoMode: storage.isDemoMode());
 });
 
 final dailyBriefingProvider = FutureProvider<DailyBriefing>((ref) async {

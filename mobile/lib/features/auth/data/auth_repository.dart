@@ -65,10 +65,17 @@ class AuthRepository {
   }
 
   Future<User> signInAsDemo() async {
-    final response = await _apiClient.post('/auth/demo', data: {});
-    final token = response.data['access_token'] as String;
-    await _storage.saveAuthToken(token);
-    final user = User.fromJson(response.data['user'] as Map<String, dynamic>);
+    await _storage.setDemoMode(true);
+    await _storage.saveAuthToken('demo-token');
+    await _storage.setOnboardingComplete(true);
+    final user = User(
+      id: 'demo-user-001',
+      email: 'demo@aria.app',
+      name: 'Vidhi',
+      assistantName: 'ARIA',
+      createdAt: DateTime.now(),
+      onboardingComplete: true,
+    );
     await _storage.saveUser(user.toJson());
     return user;
   }
