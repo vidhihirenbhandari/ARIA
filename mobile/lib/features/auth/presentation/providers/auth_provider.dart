@@ -80,6 +80,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> signInAsDemo() async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final user = await _repository.signInAsDemo();
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (e) {
+      state = AuthState(status: AuthStatus.error, error: e.toString());
+    }
+  }
+
   Future<void> signInWithEmail(String email, String password) async {
     state = state.copyWith(status: AuthStatus.loading);
     try {

@@ -263,6 +263,24 @@ async def update_me(
 
 
 @router.post(
+    "/demo",
+    response_model=TokenResponse,
+    summary="Demo login — no OAuth required",
+    description="Creates or reuses a shared demo account. For demos only; disable in production.",
+)
+async def demo_login(db: AsyncSession = Depends(get_db)) -> TokenResponse:
+    user = await _get_or_create_user(
+        db,
+        email="demo@aria.app",
+        name="Demo User",
+        oauth_provider="demo",
+        oauth_id="demo-user-001",
+        avatar_url=None,
+    )
+    return _build_token_response(user)
+
+
+@router.post(
     "/logout",
     summary="Logout (client should discard token)",
 )

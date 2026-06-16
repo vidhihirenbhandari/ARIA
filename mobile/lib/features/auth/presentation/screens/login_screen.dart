@@ -208,6 +208,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   duration: const Duration(milliseconds: 300),
                 ),
 
+                const SizedBox(height: 24),
+
+                // Demo mode — no signup needed
+                GestureDetector(
+                  onTap: authState.isLoading
+                      ? null
+                      : () =>
+                          ref.read(authProvider.notifier).signInAsDemo(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.accent.withOpacity(0.4),
+                      ),
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.accent.withOpacity(0.08),
+                          AppColors.secondary.withOpacity(0.08),
+                        ],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.rocket_launch_rounded,
+                          color: AppColors.accent,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Try Demo — No sign-up needed',
+                          style: AppTextStyles.button.copyWith(
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 40),
                 Text(
                   'By continuing, you agree to our Terms of Service\nand Privacy Policy',

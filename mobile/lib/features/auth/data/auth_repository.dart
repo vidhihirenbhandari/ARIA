@@ -64,6 +64,15 @@ class AuthRepository {
     return user;
   }
 
+  Future<User> signInAsDemo() async {
+    final response = await _apiClient.post('/auth/demo', data: {});
+    final token = response.data['access_token'] as String;
+    await _storage.saveAuthToken(token);
+    final user = User.fromJson(response.data['user'] as Map<String, dynamic>);
+    await _storage.saveUser(user.toJson());
+    return user;
+  }
+
   Future<void> signOut() async {
     try {
       await _apiClient.post('/auth/logout');
