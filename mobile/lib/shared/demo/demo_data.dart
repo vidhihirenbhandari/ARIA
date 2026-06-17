@@ -35,6 +35,37 @@ class DemoData {
         ),
       ];
 
+  static List<Event> get calendarEvents => [
+        Event(
+          id: 'cal-1',
+          userId: 'demo-user',
+          title: 'Team Standup',
+          startTime: DateTime.now().copyWith(hour: 10, minute: 0),
+          endTime: DateTime.now().copyWith(hour: 10, minute: 30),
+          source: 'google_calendar',
+          status: 'approved',
+        ),
+        Event(
+          id: 'cal-2',
+          userId: 'demo-user',
+          title: 'Client Call — Raj Sharma',
+          startTime: DateTime.now().copyWith(hour: 14, minute: 0),
+          endTime: DateTime.now().copyWith(hour: 15, minute: 0),
+          location: 'Google Meet',
+          source: 'google_calendar',
+          status: 'approved',
+        ),
+        Event(
+          id: 'cal-3',
+          userId: 'demo-user',
+          title: 'Product Review',
+          startTime: DateTime.now().copyWith(hour: 16, minute: 30),
+          endTime: DateTime.now().copyWith(hour: 17, minute: 30),
+          source: 'google_calendar',
+          status: 'approved',
+        ),
+      ];
+
   static List<TravelBooking> get travelBookings => [
         TravelBooking(
           id: 'demo-travel-1',

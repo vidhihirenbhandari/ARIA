@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_event.dart';
+import '../../../../shared/providers/calendar_events_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -106,6 +107,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           'description': e.description ?? '',
                           'confidence': e.confidenceScore ?? 0.9,
                           'type': e.source,
+                          'startTime': e.startTime,
+                          'endTime': e.endTime,
+                          'location': e.location,
                         })
                     .toList();
                 return PendingSuggestionsWidget(
@@ -114,6 +118,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     await ref
                         .read(eventsRepositoryProvider)
                         .approveEvent(s['id'] as String);
+                    final approvedEvent = Event(
+                      id: s['id'] as String,
+                      userId: 'demo-user',
+                      title: s['title'] as String,
+                      startTime: s['startTime'] as DateTime,
+                      endTime: s['endTime'] as DateTime,
+                      location: s['location'] as String?,
+                      source: s['type'] as String,
+                      status: 'approved',
+                    );
+                    ref.read(calendarEventsProvider.notifier).addEvent(approvedEvent);
                     ref.invalidate(pendingSuggestionsProvider);
                   },
                   onIgnore: (s) async {

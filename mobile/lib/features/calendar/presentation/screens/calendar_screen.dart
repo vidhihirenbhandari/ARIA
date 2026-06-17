@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_event.dart';
+import '../../../../shared/providers/calendar_events_provider.dart';
 import '../widgets/event_detection_card.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -14,43 +15,11 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selectedDate = DateTime.now();
-  final List<Event> _approvedEvents = [
-    Event(
-      id: '1',
-      userId: 'u1',
-      title: 'Team Standup',
-      startTime: DateTime.now().copyWith(hour: 10, minute: 0),
-      endTime: DateTime.now().copyWith(hour: 10, minute: 30),
-      source: 'google_calendar',
-      status: 'approved',
-    ),
-    Event(
-      id: '2',
-      userId: 'u1',
-      title: 'Client Call',
-      startTime: DateTime.now().copyWith(hour: 14, minute: 0),
-      endTime: DateTime.now().copyWith(hour: 15, minute: 0),
-      location: 'Zoom',
-      source: 'google_calendar',
-      status: 'approved',
-    ),
-  ];
-
-  final List<Event> _pendingEvents = [
-    Event(
-      id: '3',
-      userId: 'u1',
-      title: 'Meeting with John',
-      startTime: DateTime.now().add(const Duration(days: 1)).copyWith(hour: 15, minute: 0),
-      endTime: DateTime.now().add(const Duration(days: 1)).copyWith(hour: 16, minute: 0),
-      source: 'whatsapp',
-      status: 'pending',
-      confidenceScore: 0.92,
-    ),
-  ];
+  final List<Event> _pendingEvents = [];
 
   @override
   Widget build(BuildContext context) {
+    final approvedEvents = ref.watch(calendarEventsProvider);
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -84,7 +53,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
               child: Text('Scheduled', style: AppTextStyles.headlineSmall),
             ),
-            ..._approvedEvents.map((e) => _buildEventListTile(e)),
+            ...approvedEvents.map((e) => _buildEventListTile(e)),
             const SizedBox(height: 80),
           ],
         ),
@@ -203,10 +172,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   void _approveEvent(Event event) {
-    setState(() {
-      _pendingEvents.remove(event);
-      _approvedEvents.add(event.copyWith(status: 'approved'));
-    });
+    setState(() => _pendingEvents.remove(event));
+    ref.read(calendarEventsProvider.notifier).addEvent(event.copyWith(status: 'approved'));
   }
 
   void _rejectEvent(Event event) {

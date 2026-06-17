@@ -3,71 +3,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_text_styles.dart';
+import 'features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'features/calendar/presentation/screens/calendar_screen.dart';
+import 'features/assistant/presentation/screens/chat_screen.dart';
+import 'features/tasks/presentation/screens/tasks_screen.dart';
+import 'features/memory/presentation/screens/memory_screen.dart';
 
 final _navIndexProvider = StateProvider<int>((ref) => 0);
 
 class MainNavigation extends ConsumerWidget {
+  // child kept for ShellRoute compatibility but ignored — we use IndexedStack
   final Widget child;
-
   const MainNavigation({super.key, required this.child});
 
-  static const List<_NavItem> _navItems = [
-    _NavItem(
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home_rounded,
-      label: 'Home',
-      route: '/home/dashboard',
-    ),
-    _NavItem(
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today_rounded,
-      label: 'Calendar',
-      route: '/home/calendar',
-    ),
-    _NavItem(
-      icon: Icons.auto_awesome_outlined,
-      activeIcon: Icons.auto_awesome_rounded,
-      label: 'ARIA',
-      route: '/home/chat',
-      isCenter: true,
-    ),
-    _NavItem(
-      icon: Icons.task_outlined,
-      activeIcon: Icons.task_rounded,
-      label: 'Tasks',
-      route: '/home/tasks',
-    ),
-    _NavItem(
-      icon: Icons.psychology_outlined,
-      activeIcon: Icons.psychology_rounded,
-      label: 'Memory',
-      route: '/home/memory',
-    ),
+  static const _screens = [
+    DashboardScreen(),
+    CalendarScreen(),
+    ChatScreen(),
+    TasksScreen(),
+    MemoryScreen(),
   ];
 
-  int _getIndexFromRoute(String location) {
-    if (location.contains('/home/dashboard')) return 0;
-    if (location.contains('/home/calendar')) return 1;
-    if (location.contains('/home/chat')) return 2;
-    if (location.contains('/home/tasks')) return 3;
-    if (location.contains('/home/memory')) return 4;
-    return 0;
-  }
+  static const List<_NavItem> _navItems = [
+    _NavItem(icon: Icons.home_outlined,        activeIcon: Icons.home_rounded,          label: 'Home',     isCenter: false),
+    _NavItem(icon: Icons.calendar_today_outlined, activeIcon: Icons.calendar_today_rounded, label: 'Calendar', isCenter: false),
+    _NavItem(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_rounded,  label: 'ARIA',     isCenter: true),
+    _NavItem(icon: Icons.task_outlined,         activeIcon: Icons.task_rounded,          label: 'Tasks',    isCenter: false),
+    _NavItem(icon: Icons.psychology_outlined,   activeIcon: Icons.psychology_rounded,    label: 'Memory',   isCenter: false),
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final location = GoRouterState.of(context).matchedLocation;
-    final currentIndex = _getIndexFromRoute(location);
+    final currentIndex = ref.watch(_navIndexProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: child,
+      body: IndexedStack(
+        index: currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: Border(
-            top: BorderSide(color: AppColors.border, width: 1),
-          ),
+          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: SafeArea(
           top: false,
@@ -82,12 +60,10 @@ class MainNavigation extends ConsumerWidget {
                 if (item.isCenter) {
                   return Expanded(
                     child: GestureDetector(
-                      onTap: () => context.go(item.route),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => ref.read(_navIndexProvider.notifier).state = index,
                       child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 12,
-                        ),
+                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                         decoration: BoxDecoration(
                           gradient: AppColors.accentGradient,
                           borderRadius: BorderRadius.circular(16),
@@ -99,11 +75,7 @@ class MainNavigation extends ConsumerWidget {
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.auto_awesome_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                        child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
                       ),
                     ),
                   );
@@ -111,8 +83,8 @@ class MainNavigation extends ConsumerWidget {
 
                 return Expanded(
                   child: GestureDetector(
-                    onTap: () => context.go(item.route),
                     behavior: HitTestBehavior.opaque,
+                    onTap: () => ref.read(_navIndexProvider.notifier).state = index,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -121,9 +93,7 @@ class MainNavigation extends ConsumerWidget {
                           child: Icon(
                             isActive ? item.activeIcon : item.icon,
                             key: ValueKey(isActive),
-                            color: isActive
-                                ? AppColors.accent
-                                : AppColors.textTertiary,
+                            color: isActive ? AppColors.accent : AppColors.textTertiary,
                             size: 24,
                           ),
                         ),
@@ -131,12 +101,8 @@ class MainNavigation extends ConsumerWidget {
                         AnimatedDefaultTextStyle(
                           duration: const Duration(milliseconds: 200),
                           style: AppTextStyles.labelSmall.copyWith(
-                            color: isActive
-                                ? AppColors.accent
-                                : AppColors.textTertiary,
-                            fontWeight: isActive
-                                ? FontWeight.w600
-                                : FontWeight.w400,
+                            color: isActive ? AppColors.accent : AppColors.textTertiary,
+                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                           ),
                           child: Text(item.label),
                         ),
@@ -157,14 +123,11 @@ class _NavItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
-  final String route;
   final bool isCenter;
-
   const _NavItem({
     required this.icon,
     required this.activeIcon,
     required this.label,
-    required this.route,
-    this.isCenter = false,
+    required this.isCenter,
   });
 }
