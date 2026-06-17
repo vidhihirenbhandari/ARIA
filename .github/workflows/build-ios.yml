@@ -23,58 +23,20 @@ jobs:
         working-directory: mobile
         run: flutter pub get
 
-      - name: Import signing certificate
-        if: env.BUILD_CERTIFICATE_BASE64 != ''
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
-
-      - name: Build iOS (no signing — for simulator / ad-hoc)
-        if: env.BUILD_CERTIFICATE_BASE64 == ''
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+      - name: Build iOS (unsigned — for Sideloadly install)
         working-directory: mobile
         run: flutter build ios --release --no-codesign
 
-      - name: Build iOS (signed)
-        if: env.BUILD_CERTIFICATE_BASE64 != ''
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-        working-directory: mobile
-        run: flutter build ipa --release
+      - name: Package into unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r mobile/build/ios/iphoneos/Runner.app Payload/ARIA.app
+          zip -r ARIA-unsigned.ipa Payload/
+          echo "IPA size: $(du -sh ARIA-unsigned.ipa | cut -f1)"
 
-      - name: Upload IPA
-        if: env.BUILD_CERTIFICATE_BASE64 != ''
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ARIA-iOS
-          path: mobile/build/ios/ipa/*.ipa
-          retention-days: 30
-
-      - name: Upload unsigned build
-        if: env.BUILD_CERTIFICATE_BASE64 == ''
+      - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
           name: ARIA-iOS-unsigned
-          path: mobile/build/ios/iphoneos/Runner.app
-          retention-days: 14
+          path: ARIA-unsigned.ipa
+          retention-days: 30
