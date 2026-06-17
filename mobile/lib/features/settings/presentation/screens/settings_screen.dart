@@ -5,16 +5,255 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/theme/aria_color_scheme.dart';
 import '../../../../shared/providers/theme_provider.dart';
+import '../../../../shared/services/local_storage.dart';
+import '../../../../shared/services/profile_service.dart';
+import '../../../../shared/services/proactive_notification_service.dart';
 import '../providers/settings_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _waterRemindersEnabled = false;
+  bool _exerciseReminderEnabled = false;
+  final _apiKeyController = TextEditingController();
+  bool _apiKeyObscured = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final storage = ref.read(localStorageProvider);
+    final existingKey = storage.getApiKey() ?? '';
+    _apiKeyController.text = existingKey;
+    _waterRemindersEnabled =
+        storage.get('water_reminders_enabled') as bool? ?? false;
+    _exerciseReminderEnabled =
+        storage.get('exercise_reminder_enabled') as bool? ?? false;
+  }
+
+  @override
+  void dispose() {
+    _apiKeyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveApiKey(String key) async {
+    final storage = ref.read(localStorageProvider);
+    await storage.saveApiKey(key.trim());
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('API key saved'),
+          backgroundColor: AppColors.accent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _showApiKeyDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Anthropic API Key', style: AppTextStyles.headlineSmall),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your Anthropic API key to enable real AI responses. '
+              'Get one at console.anthropic.com',
+              style: AppTextStyles.caption,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _apiKeyController,
+              obscureText: _apiKeyObscured,
+              style: const TextStyle(
+                  color: AppColors.textPrimary, fontFamily: 'monospace'),
+              decoration: InputDecoration(
+                hintText: 'sk-ant-...',
+                hintStyle:
+                    const TextStyle(color: AppColors.textTertiary, fontSize: 13),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.accent, width: 2),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _apiKeyObscured ? Icons.visibility_off : Icons.visibility,
+                    color: AppColors.textTertiary,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _apiKeyObscured = !_apiKeyObscured),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel',
+                style: TextStyle(color: AppColors.textTertiary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _saveApiKey(_apiKeyController.text);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Save', style: AppTextStyles.button),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showProfileDialog() {
+    final profile = ref.read(userProfileProvider);
+    final nameCtrl = TextEditingController(text: profile.fullName);
+    final workplaceCtrl = TextEditingController(text: profile.workplace);
+    final roleCtrl = TextEditingController(text: profile.role);
+    final goalsCtrl = TextEditingController(text: profile.goals);
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          left: 24,
+          right: 24,
+          top: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Your Profile', style: AppTextStyles.headlineMedium),
+            const SizedBox(height: 4),
+            const Text(
+              'Help ARIA understand you better for personalized responses.',
+              style: AppTextStyles.caption,
+            ),
+            const SizedBox(height: 20),
+            _profileField(nameCtrl, 'Full Name', Icons.person_outline),
+            const SizedBox(height: 12),
+            _profileField(workplaceCtrl, 'Workplace', Icons.business_outlined),
+            const SizedBox(height: 12),
+            _profileField(roleCtrl, 'Your Role / Title', Icons.work_outline),
+            const SizedBox(height: 12),
+            _profileField(goalsCtrl, 'Current Goals', Icons.flag_outlined,
+                maxLines: 2),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final svc = ref.read(profileServiceProvider);
+                  final updated = profile.copyWith(
+                    fullName: nameCtrl.text.trim(),
+                    workplace: workplaceCtrl.text.trim(),
+                    role: roleCtrl.text.trim(),
+                    goals: goalsCtrl.text.trim(),
+                  );
+                  await svc.saveProfile(updated);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Profile saved'),
+                        backgroundColor: AppColors.accent,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Save Profile', style: AppTextStyles.button),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _profileField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: ctrl,
+      maxLines: maxLines,
+      style: AppTextStyles.bodyMedium,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textTertiary,
+        ),
+        prefixIcon: Icon(icon, color: AppColors.textTertiary, size: 20),
+        filled: true,
+        fillColor: AppColors.background,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.accent, width: 2),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
+    final storage = ref.read(localStorageProvider);
+    final hasApiKey =
+        (storage.getApiKey() ?? '').isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -22,7 +261,8 @@ class SettingsScreen extends ConsumerWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary),
+          icon: const Icon(Icons.arrow_back_rounded,
+              color: AppColors.textSecondary),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Settings', style: AppTextStyles.headlineLarge),
@@ -33,7 +273,41 @@ class SettingsScreen extends ConsumerWidget {
           _buildProfileCard(context, ref),
           const SizedBox(height: 24),
           _buildAppearanceSection(ref),
-          _buildSection('Assistant', [
+
+          // ── ARIA Intelligence ──────────────────────────────────────
+          _buildSection('ARIA Intelligence', [
+            _buildNavTile(
+              context,
+              icon: Icons.vpn_key_outlined,
+              title: 'Anthropic API Key',
+              subtitle: hasApiKey
+                  ? 'Connected — real AI responses enabled'
+                  : 'Not set — using demo mode',
+              onTap: _showApiKeyDialog,
+              trailingWidget: hasApiKey
+                  ? Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  : null,
+            ),
+          ]),
+
+          // ── Profile ────────────────────────────────────────────────
+          _buildSection('Profile', [
+            _buildNavTile(
+              context,
+              icon: Icons.person_outlined,
+              title: 'Your Details',
+              subtitle: 'Name, workplace, role, and goals',
+              onTap: _showProfileDialog,
+            ),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildNavTile(
               context,
               icon: Icons.auto_awesome_outlined,
@@ -41,7 +315,8 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: settings.assistantName,
               route: '/settings/assistant-name',
             ),
-            const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildNavTile(
               context,
               icon: Icons.lock_person_outlined,
@@ -50,6 +325,44 @@ class SettingsScreen extends ConsumerWidget {
               route: '/settings/permissions',
             ),
           ]),
+
+          // ── Health & Wellness ──────────────────────────────────────
+          _buildSection('Health & Wellness', [
+            _buildToggleTile(
+              icon: Icons.water_drop_outlined,
+              title: 'Water Reminders',
+              subtitle: 'Remind me to drink water every 2 hours',
+              value: _waterRemindersEnabled,
+              onToggle: () async {
+                setState(
+                    () => _waterRemindersEnabled = !_waterRemindersEnabled);
+                await storage.put(
+                    'water_reminders_enabled', _waterRemindersEnabled);
+                final svc = ref.read(proactiveNotificationServiceProvider);
+                await svc.scheduleWaterReminders(
+                    enabled: _waterRemindersEnabled);
+              },
+            ),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            _buildToggleTile(
+              icon: Icons.directions_run_outlined,
+              title: 'Exercise Reminder',
+              subtitle: 'Daily movement reminder at 6:00 PM',
+              value: _exerciseReminderEnabled,
+              onToggle: () async {
+                setState(() =>
+                    _exerciseReminderEnabled = !_exerciseReminderEnabled);
+                await storage.put(
+                    'exercise_reminder_enabled', _exerciseReminderEnabled);
+                final svc = ref.read(proactiveNotificationServiceProvider);
+                await svc.scheduleExerciseReminder(
+                    enabled: _exerciseReminderEnabled);
+              },
+            ),
+          ]),
+
+          // ── Notifications ──────────────────────────────────────────
           _buildSection('Notifications', [
             _buildToggleTile(
               icon: Icons.notifications_outlined,
@@ -58,15 +371,18 @@ class SettingsScreen extends ConsumerWidget {
               value: settings.notificationsEnabled,
               onToggle: notifier.toggleNotifications,
             ),
-            const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildToggleTile(
               icon: Icons.wb_sunny_outlined,
               title: 'Daily Briefing',
-              subtitle: 'Morning summary every day at ${settings.briefingTime}',
+              subtitle:
+                  'Morning summary every day at ${settings.briefingTime}',
               value: settings.dailyBriefingEnabled,
               onToggle: notifier.toggleDailyBriefing,
             ),
-            const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildToggleTile(
               icon: Icons.do_not_disturb_on_outlined,
               title: 'Focus Mode',
@@ -75,6 +391,8 @@ class SettingsScreen extends ConsumerWidget {
               onToggle: notifier.toggleFocusMode,
             ),
           ]),
+
+          // ── Integrations ───────────────────────────────────────────
           _buildSection('Integrations', [
             _buildNavTile(
               context,
@@ -82,14 +400,16 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Calendar Connections',
               subtitle: '1 connected',
             ),
-            const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildNavTile(
               context,
               icon: Icons.chat_outlined,
               title: 'Messaging Apps',
               subtitle: '0 connected',
             ),
-            const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildNavTile(
               context,
               icon: Icons.task_outlined,
@@ -97,6 +417,8 @@ class SettingsScreen extends ConsumerWidget {
               subtitle: '0 connected',
             ),
           ]),
+
+          // ── Data & Privacy ─────────────────────────────────────────
           _buildSection('Data & Privacy', [
             _buildNavTile(
               context,
@@ -104,7 +426,8 @@ class SettingsScreen extends ConsumerWidget {
               title: 'Export My Data',
               subtitle: 'Download all your ARIA data',
             ),
-            const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+            const Divider(
+                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
             _buildNavTile(
               context,
               icon: Icons.delete_outline,
@@ -113,13 +436,15 @@ class SettingsScreen extends ConsumerWidget {
               isDestructive: true,
             ),
           ]),
+
           const SizedBox(height: 16),
           _buildSignOutButton(context, ref),
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'ARIA v1.0.0 • Made with ♥',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+              'ARIA v1.0.0 • Made with love',
+              style: AppTextStyles.caption
+                  .copyWith(color: AppColors.textTertiary),
             ),
           ),
           const SizedBox(height: 32),
@@ -146,7 +471,11 @@ class SettingsScreen extends ConsumerWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: Text('V', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+              child: Text('V',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700)),
             ),
           ),
           const SizedBox(width: 16),
@@ -158,22 +487,27 @@ class SettingsScreen extends ConsumerWidget {
                 const Text('vidhi@mantratec.com', style: AppTextStyles.caption),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     gradient: AppColors.accentGradient,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
                     'Pro',
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.edit_outlined, color: AppColors.textTertiary, size: 20),
-            onPressed: () {},
+            icon: const Icon(Icons.edit_outlined,
+                color: AppColors.textTertiary, size: 20),
+            onPressed: _showProfileDialog,
           ),
         ],
       ),
@@ -214,16 +548,27 @@ class SettingsScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     String? route,
+    VoidCallback? onTap,
     bool isDestructive = false,
+    Widget? trailingWidget,
   }) {
     return GestureDetector(
-      onTap: () => route != null ? context.push(route) : null,
+      onTap: () {
+        if (onTap != null) {
+          onTap();
+        } else if (route != null) {
+          context.push(route);
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: isDestructive ? AppColors.error : AppColors.textSecondary, size: 22),
+            Icon(icon,
+                color:
+                    isDestructive ? AppColors.error : AppColors.textSecondary,
+                size: 22),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -232,14 +577,20 @@ class SettingsScreen extends ConsumerWidget {
                   Text(
                     title,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: isDestructive ? AppColors.error : AppColors.textPrimary,
+                      color:
+                          isDestructive ? AppColors.error : AppColors.textPrimary,
                     ),
                   ),
                   Text(subtitle, style: AppTextStyles.caption),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary, size: 20),
+            if (trailingWidget != null) ...[
+              trailingWidget,
+              const SizedBox(width: 8),
+            ],
+            const Icon(Icons.chevron_right_rounded,
+                color: AppColors.textTertiary, size: 20),
           ],
         ),
       ),
@@ -307,7 +658,8 @@ class SettingsScreen extends ConsumerWidget {
               final scheme = AriaColorScheme.presets[i];
               final isSelected = i == currentIndex;
               return GestureDetector(
-                onTap: () => ref.read(themeIndexProvider.notifier).setTheme(i),
+                onTap: () =>
+                    ref.read(themeIndexProvider.notifier).setTheme(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   width: 72,
@@ -320,7 +672,11 @@ class SettingsScreen extends ConsumerWidget {
                       width: 2,
                     ),
                     boxShadow: isSelected
-                        ? [BoxShadow(color: scheme.accent.withOpacity(0.4), blurRadius: 12)]
+                        ? [
+                            BoxShadow(
+                                color: scheme.accent.withOpacity(0.4),
+                                blurRadius: 12)
+                          ]
                         : null,
                   ),
                   child: Stack(
@@ -341,7 +697,8 @@ class SettingsScreen extends ConsumerWidget {
                       Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(scheme.emoji, style: const TextStyle(fontSize: 18)),
+                          Text(scheme.emoji,
+                              style: const TextStyle(fontSize: 18)),
                           const SizedBox(height: 2),
                           Text(
                             scheme.name,
@@ -361,8 +718,10 @@ class SettingsScreen extends ConsumerWidget {
                           child: Container(
                             width: 18,
                             height: 18,
-                            decoration: BoxDecoration(color: scheme.accent, shape: BoxShape.circle),
-                            child: const Icon(Icons.check_rounded, color: Colors.white, size: 12),
+                            decoration: BoxDecoration(
+                                color: scheme.accent, shape: BoxShape.circle),
+                            child: const Icon(Icons.check_rounded,
+                                color: Colors.white, size: 12),
                           ),
                         ),
                     ],
