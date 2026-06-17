@@ -16,10 +16,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   bool _showEmailForm = false;
+  bool _isCreatingAccount = false;
 
   @override
   void initState() {
@@ -28,18 +34,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     )..forward();
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: const Text('Please fill in all fields'), backgroundColor: AppColors.error),
+      );
+      return;
+    }
+
+    if (_isCreatingAccount) {
+      final name = _nameController.text.trim();
+      final confirm = _confirmPasswordController.text;
+      if (name.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Please enter your name'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+      if (password != confirm) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: const Text('Passwords do not match'), backgroundColor: AppColors.error),
+        );
+        return;
+      }
+      ref.read(authProvider.notifier).createAccount(email, password, name);
+    } else {
+      ref.read(authProvider.notifier).signInWithEmail(email, password);
+    }
   }
 
   @override
@@ -55,10 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         }
       } else if (next.status == AuthStatus.error && next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: AppColors.error,
-          ),
+          SnackBar(content: Text(next.error!), backgroundColor: AppColors.error),
         );
         ref.read(authProvider.notifier).clearError();
       }
@@ -91,138 +125,86 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Colors.white,
-                      size: 36,
-                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 36),
                   ),
                 ),
                 const SizedBox(height: 32),
-                Text(
-                  'Welcome to ARIA',
-                  style: AppTextStyles.displaySmall,
-                  textAlign: TextAlign.center,
-                ),
+                Text('Welcome to ARIA', style: AppTextStyles.displaySmall, textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 Text(
                   'Your intelligent personal assistant',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 56),
+                const SizedBox(height: 48),
 
-                // Google sign in
+                // Google Sign-In
                 _SocialSignInButton(
                   onTap: authState.isLoading
                       ? null
-                      : () =>
-                          ref.read(authProvider.notifier).signInWithGoogle(),
+                      : () => ref.read(authProvider.notifier).signInWithGoogle(),
                   icon: 'G',
                   label: 'Continue with Google',
                   backgroundColor: Colors.white,
                   textColor: const Color(0xFF1F1F1F),
                   iconColor: const Color(0xFF4285F4),
                 ),
-                const SizedBox(height: 12),
-
-                // Apple sign in
-                _SocialSignInButton(
-                  onTap: authState.isLoading
-                      ? null
-                      : () =>
-                          ref.read(authProvider.notifier).signInWithApple(),
-                  icon: '',
-                  label: 'Continue with Apple',
-                  backgroundColor: Colors.black,
-                  textColor: Colors.white,
-                  iconWidget: const Icon(
-                    Icons.apple,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
                 const SizedBox(height: 24),
 
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Divider(color: AppColors.border),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'or',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ),
-                    const Expanded(
-                      child: Divider(color: AppColors.border),
-                    ),
-                  ],
-                ),
+                _divider(),
                 const SizedBox(height: 24),
 
+                // Email form toggle
                 AnimatedCrossFade(
                   firstChild: OutlinedButton(
-                    onPressed: () =>
-                        setState(() => _showEmailForm = true),
+                    onPressed: () => setState(() => _showEmailForm = true),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                       side: const BorderSide(color: AppColors.border),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
                       'Continue with Email',
-                      style: AppTextStyles.button.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                      style: AppTextStyles.button.copyWith(color: AppColors.textSecondary),
                     ),
                   ),
-                  secondChild: _EmailSignInForm(
+                  secondChild: _EmailForm(
+                    nameController: _nameController,
                     emailController: _emailController,
                     passwordController: _passwordController,
+                    confirmPasswordController: _confirmPasswordController,
                     obscurePassword: _obscurePassword,
+                    obscureConfirm: _obscureConfirm,
+                    isCreatingAccount: _isCreatingAccount,
                     isLoading: authState.isLoading,
-                    onTogglePassword: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                    onSubmit: () {
-                      ref
-                          .read(authProvider.notifier)
-                          .signInWithEmail(
-                            _emailController.text,
-                            _passwordController.text,
-                          );
-                    },
+                    onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onToggleConfirm: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                    onSubmit: _submit,
+                    onToggleMode: () => setState(() {
+                      _isCreatingAccount = !_isCreatingAccount;
+                      _nameController.clear();
+                      _emailController.clear();
+                      _passwordController.clear();
+                      _confirmPasswordController.clear();
+                    }),
                   ),
-                  crossFadeState: _showEmailForm
-                      ? CrossFadeState.showSecond
-                      : CrossFadeState.showFirst,
+                  crossFadeState: _showEmailForm ? CrossFadeState.showSecond : CrossFadeState.showFirst,
                   duration: const Duration(milliseconds: 300),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Demo mode — no signup needed
+                // Demo mode
                 GestureDetector(
                   onTap: authState.isLoading
                       ? null
-                      : () =>
-                          ref.read(authProvider.notifier).signInAsDemo(),
+                      : () => ref.read(authProvider.notifier).signInAsDemo(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.accent.withOpacity(0.4),
-                      ),
+                      border: Border.all(color: AppColors.accent.withOpacity(0.4)),
                       gradient: LinearGradient(
                         colors: [
                           AppColors.accent.withOpacity(0.08),
@@ -235,17 +217,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.rocket_launch_rounded,
-                          color: AppColors.accent,
-                          size: 18,
-                        ),
+                        Icon(Icons.rocket_launch_rounded, color: AppColors.accent, size: 18),
                         const SizedBox(width: 10),
                         Text(
                           'Try Demo — No sign-up needed',
-                          style: AppTextStyles.button.copyWith(
-                            color: AppColors.accent,
-                          ),
+                          style: AppTextStyles.button.copyWith(color: AppColors.accent),
                         ),
                       ],
                     ),
@@ -255,9 +231,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 const SizedBox(height: 40),
                 Text(
                   'By continuing, you agree to our Terms of Service\nand Privacy Policy',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textTertiary,
-                  ),
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -275,6 +249,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
     );
   }
+
+  Widget _divider() {
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: AppColors.border)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text('or', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary)),
+        ),
+        const Expanded(child: Divider(color: AppColors.border)),
+      ],
+    );
+  }
 }
 
 class _SocialSignInButton extends StatelessWidget {
@@ -284,7 +271,6 @@ class _SocialSignInButton extends StatelessWidget {
   final Color backgroundColor;
   final Color textColor;
   final Color? iconColor;
-  final Widget? iconWidget;
 
   const _SocialSignInButton({
     required this.onTap,
@@ -293,7 +279,6 @@ class _SocialSignInButton extends StatelessWidget {
     required this.backgroundColor,
     required this.textColor,
     this.iconColor,
-    this.iconWidget,
   });
 
   @override
@@ -305,30 +290,17 @@ class _SocialSignInButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.border,
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (iconWidget != null)
-              iconWidget!
-            else
-              Text(
-                icon,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: iconColor ?? textColor,
-                ),
-              ),
-            const SizedBox(width: 12),
             Text(
-              label,
-              style: AppTextStyles.button.copyWith(color: textColor),
+              icon,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: iconColor ?? textColor),
             ),
+            const SizedBox(width: 12),
+            Text(label, style: AppTextStyles.button.copyWith(color: textColor)),
           ],
         ),
       ),
@@ -336,92 +308,129 @@ class _SocialSignInButton extends StatelessWidget {
   }
 }
 
-class _EmailSignInForm extends StatelessWidget {
+class _EmailForm extends StatelessWidget {
+  final TextEditingController nameController;
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final TextEditingController confirmPasswordController;
   final bool obscurePassword;
+  final bool obscureConfirm;
+  final bool isCreatingAccount;
   final bool isLoading;
   final VoidCallback onTogglePassword;
+  final VoidCallback onToggleConfirm;
   final VoidCallback onSubmit;
+  final VoidCallback onToggleMode;
 
-  const _EmailSignInForm({
+  const _EmailForm({
+    required this.nameController,
     required this.emailController,
     required this.passwordController,
+    required this.confirmPasswordController,
     required this.obscurePassword,
+    required this.obscureConfirm,
+    required this.isCreatingAccount,
     required this.isLoading,
     required this.onTogglePassword,
+    required this.onToggleConfirm,
     required this.onSubmit,
+    required this.onToggleMode,
   });
+
+  InputDecoration _inputDecoration(String hint, IconData prefixIcon, {Widget? suffix}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: Icon(prefixIcon, color: AppColors.textTertiary),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: AppColors.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: AppColors.accent, width: 1.5),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Sign In / Create Account toggle header
+        Row(
+          children: [
+            _ModeTab(label: 'Sign In', selected: !isCreatingAccount, onTap: isCreatingAccount ? onToggleMode : null),
+            const SizedBox(width: 8),
+            _ModeTab(label: 'Create Account', selected: isCreatingAccount, onTap: !isCreatingAccount ? onToggleMode : null),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        if (isCreatingAccount) ...[
+          TextField(
+            controller: nameController,
+            textCapitalization: TextCapitalization.words,
+            style: AppTextStyles.bodyMedium,
+            decoration: _inputDecoration('Your name', Icons.person_outline_rounded),
+          ),
+          const SizedBox(height: 12),
+        ],
+
         TextField(
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
           style: AppTextStyles.bodyMedium,
-          decoration: InputDecoration(
-            hintText: 'Email address',
-            prefixIcon: const Icon(
-              Icons.email_outlined,
-              color: AppColors.textTertiary,
-            ),
-            filled: true,
-            fillColor: AppColors.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: AppColors.accent, width: 1.5),
-            ),
-          ),
+          decoration: _inputDecoration('Email address', Icons.email_outlined),
         ),
         const SizedBox(height: 12),
+
         TextField(
           controller: passwordController,
           obscureText: obscurePassword,
           style: AppTextStyles.bodyMedium,
-          decoration: InputDecoration(
-            hintText: 'Password',
-            prefixIcon: const Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.textTertiary,
-            ),
-            suffixIcon: IconButton(
+          decoration: _inputDecoration(
+            'Password',
+            Icons.lock_outline_rounded,
+            suffix: IconButton(
               onPressed: onTogglePassword,
               icon: Icon(
-                obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
+                obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                 color: AppColors.textTertiary,
               ),
             ),
-            filled: true,
-            fillColor: AppColors.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: AppColors.accent, width: 1.5),
-            ),
           ),
         ),
+
+        if (isCreatingAccount) ...[
+          const SizedBox(height: 12),
+          TextField(
+            controller: confirmPasswordController,
+            obscureText: obscureConfirm,
+            style: AppTextStyles.bodyMedium,
+            decoration: _inputDecoration(
+              'Confirm password',
+              Icons.lock_outline_rounded,
+              suffix: IconButton(
+                onPressed: onToggleConfirm,
+                icon: Icon(
+                  obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ),
+          ),
+        ],
+
         const SizedBox(height: 16),
+
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -430,17 +439,51 @@ class _EmailSignInForm extends StatelessWidget {
               backgroundColor: AppColors.accent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(
-              'Sign in',
+              isCreatingAccount ? 'Create Account' : 'Sign In',
               style: AppTextStyles.button,
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ModeTab extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  const _ModeTab({required this.label, required this.selected, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.accent.withOpacity(0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? AppColors.accent : AppColors.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: selected ? AppColors.accent : AppColors.textSecondary,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

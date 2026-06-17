@@ -90,6 +90,13 @@ class LocalStorage {
 
   Future<void> clearAll() async => _box.clear();
 
+  // Local accounts (email/password auth)
+  Future<void> saveLocalAccount(String email, Map<String, dynamic> data) async =>
+      putJson('local_account_${email.toLowerCase()}', data);
+
+  Map<String, dynamic>? getLocalAccount(String email) =>
+      getJson('local_account_${email.toLowerCase()}');
+
   // JSON helpers
   Future<void> putJson(String key, Map<String, dynamic> data) async =>
       _box.put(key, jsonEncode(data));

@@ -98,7 +98,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = AuthState(
         status: AuthStatus.error,
-        error: 'Invalid email or password',
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
+  }
+
+  Future<void> createAccount(String email, String password, String name) async {
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      final user = await _repository.createAccount(email, password, name);
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (e) {
+      state = AuthState(
+        status: AuthStatus.error,
+        error: e.toString().replaceFirst('Exception: ', ''),
       );
     }
   }

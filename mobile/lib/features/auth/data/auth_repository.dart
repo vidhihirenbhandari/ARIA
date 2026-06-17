@@ -1,67 +1,102 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../../shared/models/user.dart';
-import '../../../shared/services/api_client.dart';
 import '../../../shared/services/local_storage.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
   final storage = ref.watch(localStorageProvider);
-  return AuthRepository(apiClient, storage);
+  return AuthRepository(storage);
 });
 
 class AuthRepository {
-  final ApiClient _apiClient;
   final LocalStorage _storage;
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
-  AuthRepository(this._apiClient, this._storage);
+  AuthRepository(this._storage);
 
-  Future<User> signInWithGoogle() async {
-    final account = await _googleSignIn.signIn();
-    if (account == null) throw Exception('Google sign-in cancelled');
-
-    final auth = await account.authentication;
-    final response = await _apiClient.post('/auth/google', data: {
-      'id_token': auth.idToken,
-      'access_token': auth.accessToken,
-    });
-
-    final token = response.data['access_token'] as String;
-    final refreshToken = response.data['refresh_token'] as String;
-    await _storage.saveAuthToken(token);
-    await _storage.saveRefreshToken(refreshToken);
-
-    final userData = response.data['user'] as Map<String, dynamic>;
-    final user = User.fromJson(userData);
-    await _storage.saveUser(user.toJson());
-    return user;
+  String _hashPassword(String password, String email) {
+    final salt = '${email.toLowerCase()}_aria_v1';
+    final bytes = utf8.encode(password + salt);
+    return sha256.convert(bytes).toString();
   }
 
-  Future<User> signInWithApple() async {
-    // Apple sign-in implementation
-    final response = await _apiClient.post('/auth/apple', data: {});
-    final token = response.data['access_token'] as String;
-    await _storage.saveAuthToken(token);
-    final user = User.fromJson(response.data['user'] as Map<String, dynamic>);
+  Future<User> createAccount(String email, String password, String name) async {
+    final trimmedEmail = email.trim().toLowerCase();
+    final existing = _storage.getLocalAccount(trimmedEmail);
+    if (existing != null) {
+      throw Exception('An account with this email already exists. Please sign in.');
+    }
+    if (password.length < 6) {
+      throw Exception('Password must be at least 6 characters.');
+    }
+    final user = User(
+      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+      email: trimmedEmail,
+      name: name.trim(),
+      assistantName: 'ARIA',
+      createdAt: DateTime.now(),
+      onboardingComplete: false,
+    );
+    await _storage.saveLocalAccount(trimmedEmail, {
+      'passwordHash': _hashPassword(password, trimmedEmail),
+      'user': user.toJson(),
+    });
+    await _storage.saveAuthToken('local-auth-${user.id}');
     await _storage.saveUser(user.toJson());
     return user;
   }
 
   Future<User> signInWithEmail(String email, String password) async {
-    final response = await _apiClient.post('/auth/login', data: {
-      'email': email,
-      'password': password,
-    });
-
-    final token = response.data['access_token'] as String;
-    final refreshToken = response.data['refresh_token'] as String;
-    await _storage.saveAuthToken(token);
-    await _storage.saveRefreshToken(refreshToken);
-
-    final user = User.fromJson(response.data['user'] as Map<String, dynamic>);
+    final trimmedEmail = email.trim().toLowerCase();
+    final account = _storage.getLocalAccount(trimmedEmail);
+    if (account == null) {
+      throw Exception('No account found. Please create an account first.');
+    }
+    final expectedHash = _hashPassword(password, trimmedEmail);
+    if (account['passwordHash'] != expectedHash) {
+      throw Exception('Incorrect password. Please try again.');
+    }
+    final user = User.fromJson(account['user'] as Map<String, dynamic>);
+    await _storage.saveAuthToken('local-auth-${user.id}');
     await _storage.saveUser(user.toJson());
     return user;
+  }
+
+  Future<User> signInWithGoogle() async {
+    final account = await _googleSignIn.signIn();
+    if (account == null) throw Exception('Google sign-in cancelled');
+
+    final trimmedEmail = account.email.toLowerCase();
+    var stored = _storage.getLocalAccount(trimmedEmail);
+
+    User user;
+    if (stored != null) {
+      user = User.fromJson(stored['user'] as Map<String, dynamic>);
+    } else {
+      user = User(
+        id: 'google_${account.id}',
+        email: trimmedEmail,
+        name: account.displayName ?? account.email.split('@').first,
+        photoUrl: account.photoUrl,
+        assistantName: 'ARIA',
+        createdAt: DateTime.now(),
+        onboardingComplete: false,
+      );
+      await _storage.saveLocalAccount(trimmedEmail, {
+        'passwordHash': '',
+        'provider': 'google',
+        'user': user.toJson(),
+      });
+    }
+    await _storage.saveAuthToken('google-auth-${user.id}');
+    await _storage.saveUser(user.toJson());
+    return user;
+  }
+
+  Future<User> signInWithApple() async {
+    throw Exception('Apple Sign-In requires an Apple Developer account. Use email sign-in instead.');
   }
 
   Future<User> signInAsDemo() async {
@@ -82,9 +117,8 @@ class AuthRepository {
 
   Future<void> signOut() async {
     try {
-      await _apiClient.post('/auth/logout');
+      await _googleSignIn.signOut();
     } catch (_) {}
-    await _googleSignIn.signOut();
     await _storage.clearAll();
   }
 
@@ -107,8 +141,5 @@ class AuthRepository {
 
   Future<void> completeOnboarding() async {
     await _storage.setOnboardingComplete(true);
-    try {
-      await _apiClient.post('/users/onboarding/complete');
-    } catch (_) {}
   }
 }
