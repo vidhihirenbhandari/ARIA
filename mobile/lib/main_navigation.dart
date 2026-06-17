@@ -4,10 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'core/constants/app_colors.dart';
 import 'core/constants/app_text_styles.dart';
 import 'features/dashboard/presentation/screens/dashboard_screen.dart';
-import 'features/calendar/presentation/screens/calendar_screen.dart';
+import 'features/inbox/presentation/screens/inbox_screen.dart';
 import 'features/assistant/presentation/screens/chat_screen.dart';
+import 'features/people/presentation/screens/people_screen.dart';
 import 'features/tasks/presentation/screens/tasks_screen.dart';
-import 'features/memory/presentation/screens/memory_screen.dart';
 
 final _navIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -18,18 +18,18 @@ class MainNavigation extends ConsumerWidget {
 
   static const _screens = [
     DashboardScreen(),
-    CalendarScreen(),
+    InboxScreen(),
     ChatScreen(),
+    PeopleScreen(),
     TasksScreen(),
-    MemoryScreen(),
   ];
 
   static const List<_NavItem> _navItems = [
-    _NavItem(icon: Icons.home_outlined,        activeIcon: Icons.home_rounded,          label: 'Home',     isCenter: false),
-    _NavItem(icon: Icons.calendar_today_outlined, activeIcon: Icons.calendar_today_rounded, label: 'Calendar', isCenter: false),
-    _NavItem(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_rounded,  label: 'ARIA',     isCenter: true),
-    _NavItem(icon: Icons.task_outlined,         activeIcon: Icons.task_rounded,          label: 'Tasks',    isCenter: false),
-    _NavItem(icon: Icons.psychology_outlined,   activeIcon: Icons.psychology_rounded,    label: 'Memory',   isCenter: false),
+    _NavItem(icon: Icons.home_outlined,         activeIcon: Icons.home_rounded,           label: 'Home',   isCenter: false),
+    _NavItem(icon: Icons.inbox_outlined,         activeIcon: Icons.move_to_inbox_rounded,  label: 'Inbox',  isCenter: false),
+    _NavItem(icon: Icons.auto_awesome_outlined,  activeIcon: Icons.auto_awesome_rounded,   label: 'ARIA',   isCenter: true),
+    _NavItem(icon: Icons.people_outline,         activeIcon: Icons.people_rounded,         label: 'People', isCenter: false),
+    _NavItem(icon: Icons.task_outlined,          activeIcon: Icons.task_rounded,           label: 'Tasks',  isCenter: false),
   ];
 
   @override

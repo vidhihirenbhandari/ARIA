@@ -5,6 +5,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_event.dart';
 import '../../../../shared/providers/calendar_events_provider.dart';
+import '../../../../shared/providers/commitments_provider.dart';
+import '../../../../shared/providers/people_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -143,6 +145,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               error: (_, __) => const SizedBox.shrink(),
             ),
           ),
+          // ARIA Insights — proactive intelligence
+          SliverToBoxAdapter(child: _buildAriaInsights()),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
           SliverToBoxAdapter(
             child: UpcomingEventsWidget(events: _todayEvents),
@@ -307,4 +311,146 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
+
+  Widget _buildAriaInsights() {
+    final commitments = ref.watch(commitmentsProvider);
+    final people = ref.watch(peopleProvider);
+    final now = DateTime.now();
+
+    final insights = <_InsightItem>[];
+
+    for (final c in commitments) {
+      if (!c.isCompleted && c.dueDate != null && c.dueDate!.isBefore(now) && c.direction == 'i_promised') {
+        final daysAgo = now.difference(c.dueDate!).inDays;
+        insights.add(_InsightItem(
+          icon: Icons.warning_amber_rounded,
+          color: AppColors.error,
+          text: 'You promised to "${c.text}" for ${c.person} — due $daysAgo day${daysAgo == 1 ? '' : 's'} ago',
+          route: '/home/tasks',
+        ));
+      }
+    }
+
+    for (final c in commitments) {
+      if (!c.isCompleted && c.dueDate != null && c.dueDate!.isAfter(now) && c.dueDate!.difference(now).inDays <= 3 && c.direction == 'i_promised') {
+        final daysLeft = c.dueDate!.difference(now).inDays;
+        final dayLabel = daysLeft == 0 ? 'today' : daysLeft == 1 ? 'tomorrow' : 'in $daysLeft days';
+        insights.add(_InsightItem(
+          icon: Icons.access_time_rounded,
+          color: AppColors.accent,
+          text: 'Reminder: "${c.text}" — due $dayLabel',
+          route: '/home/tasks',
+        ));
+      }
+    }
+
+    for (final p in people) {
+      if (p.followUpDate != null && p.followUpDate!.isBefore(now)) {
+        insights.add(_InsightItem(
+          icon: Icons.person_outline_rounded,
+          color: AppColors.warning,
+          text: 'Follow up with ${p.name}${p.followUpNote != null ? ': ${p.followUpNote}' : ''}',
+          route: '/home/people',
+        ));
+      }
+      if (p.lastContact != null && now.difference(p.lastContact!).inDays >= 14) {
+        insights.add(_InsightItem(
+          icon: Icons.person_outline_rounded,
+          color: AppColors.warning,
+          text: "Haven't been in touch with ${p.name} in ${now.difference(p.lastContact!).inDays} days",
+          route: '/home/people',
+        ));
+      }
+    }
+
+    if (insights.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(Icons.check_circle_outline, color: AppColors.success, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  "You're all caught up. ARIA is watching your schedule.",
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text('ARIA Insights', style: AppTextStyles.headlineSmall),
+        ),
+        ...insights.take(4).map((item) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: GestureDetector(
+            onTap: () => context.go(item.route),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: item.color.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: item.color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(item.icon, color: item.color, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.text,
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.textTertiary),
+                ],
+              ),
+            ),
+          ),
+        )),
+      ],
+    );
+  }
+}
+
+class _InsightItem {
+  final IconData icon;
+  final Color color;
+  final String text;
+  final String route;
+  const _InsightItem({required this.icon, required this.color, required this.text, required this.route});
 }

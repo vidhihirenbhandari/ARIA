@@ -75,6 +75,39 @@ class ClaudeService {
       }
     }
 
+    // Inject pending commitments
+    final commitmentsList = _storage.getList('commitments_list');
+    final pendingCommitments = commitmentsList.where((c) => c['is_completed'] != true).toList();
+    if (pendingCommitments.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Pending commitments:');
+      for (final c in pendingCommitments) {
+        final direction = c['direction'] as String? ?? 'i_promised';
+        final person = c['person'] as String? ?? '';
+        final text = c['text'] as String? ?? '';
+        final dueDate = c['due_date'] as String?;
+        final dirStr = direction == 'i_promised' ? 'You promised' : '$person promised';
+        buffer.writeln('- $dirStr: $text${dueDate != null ? ' (due $dueDate)' : ''}');
+      }
+    }
+
+    // Inject people context
+    final peopleList = _storage.getList('people_list');
+    if (peopleList.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('People context:');
+      for (final p in peopleList) {
+        final name = p['name'] as String? ?? '';
+        final rel = p['relationship'] as String? ?? '';
+        final notes = p['notes'] as String? ?? '';
+        final prefs = p['preferences'] as String? ?? '';
+        buffer.write('- $name ($rel)');
+        if (notes.isNotEmpty) buffer.write(': $notes');
+        if (prefs.isNotEmpty) buffer.write(' | Preferences: $prefs');
+        buffer.writeln();
+      }
+    }
+
     buffer.writeln();
     buffer.writeln(
         'Be proactive, brief, and personal. Use the user\'s name occasionally. '
@@ -82,6 +115,72 @@ class ClaudeService {
         'acknowledge it and offer to remember it.');
 
     return buffer.toString();
+  }
+
+  /// Extracts commitments, tasks, events, and people from unstructured text.
+  Future<Map<String, dynamic>> extractInsights(String text) async {
+    final key = apiKey;
+    if (key == null || key.isEmpty) {
+      return {'commitments': [], 'tasks': [], 'events': [], 'people': []};
+    }
+
+    const extractionPrompt =
+        'Analyze this message and extract structured information as JSON.\n'
+        'Return ONLY a valid JSON object with this exact structure:\n'
+        '{\n'
+        '  "commitments": [{"text": "...", "person": "...", "direction": "i_promised|they_promised", "dueDate": "YYYY-MM-DD or null"}],\n'
+        '  "tasks": [{"title": "...", "priority": "high|medium|low", "dueDate": "YYYY-MM-DD or null"}],\n'
+        '  "events": [{"title": "...", "dateHint": "..."}],\n'
+        '  "people": [{"name": "...", "context": "..."}]\n'
+        '}\n'
+        'Only include items clearly present in the message. Return valid JSON only. No explanation, no markdown.';
+
+    final body = {
+      'model': _model,
+      'max_tokens': 1024,
+      'system': extractionPrompt,
+      'messages': [
+        {'role': 'user', 'content': text}
+      ],
+    };
+
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        _baseUrl,
+        data: jsonEncode(body),
+        options: Options(
+          headers: {
+            'x-api-key': key,
+            'anthropic-version': _anthropicVersion,
+            'content-type': 'application/json',
+          },
+        ),
+      );
+
+      final content = response.data?['content'] as List<dynamic>?;
+      if (content != null && content.isNotEmpty) {
+        final firstBlock = content.first as Map<String, dynamic>;
+        final rawText = firstBlock['text'] as String? ?? '';
+        final cleaned = rawText
+            .replaceAll(RegExp(r'```json\s*'), '')
+            .replaceAll(RegExp(r'```\s*'), '')
+            .trim();
+        try {
+          final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
+          return {
+            'commitments': parsed['commitments'] ?? [],
+            'tasks': parsed['tasks'] ?? [],
+            'events': parsed['events'] ?? [],
+            'people': parsed['people'] ?? [],
+          };
+        } catch (_) {
+          return {'commitments': [], 'tasks': [], 'events': [], 'people': []};
+        }
+      }
+      return {'commitments': [], 'tasks': [], 'events': [], 'people': []};
+    } catch (_) {
+      return {'commitments': [], 'tasks': [], 'events': [], 'people': []};
+    }
   }
 
   Stream<String> streamMessage({
