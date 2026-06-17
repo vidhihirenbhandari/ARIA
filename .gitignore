@@ -51,6 +51,9 @@ mobile/ios/Flutter/Flutter.framework
 mobile/ios/Flutter/Generated.xcconfig
 mobile/ios/Flutter/flutter_export_environment.sh
 
+# Claude Code
+.claude/
+
 # IDE
 .idea/
 .vscode/
