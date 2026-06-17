@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'shared/services/local_storage.dart';
 import 'shared/services/notification_service.dart';
 import 'features/assistant/data/events_repository.dart';
@@ -10,6 +12,9 @@ import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Use hash URLs so navigation works on static hosts (GitHub Pages)
+  if (kIsWeb) setUrlStrategy(const HashUrlStrategy());
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
