@@ -43,9 +43,9 @@ class MainNavigation extends ConsumerWidget {
         children: _screens,
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+          border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: SafeArea(
           top: false,

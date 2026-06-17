@@ -79,7 +79,7 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
         title: const Text('Memory', style: AppTextStyles.headlineLarge),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.accent),
+            icon: Icon(Icons.add_rounded, color: AppColors.accent),
             onPressed: _addMemory,
           ),
         ],
@@ -211,24 +211,24 @@ class _MemoryScreenState extends ConsumerState<MemoryScreen> {
             children: [
               const Text('Add Memory', style: AppTextStyles.headlineMedium),
               const SizedBox(height: 16),
-              const TextField(
-                style: TextStyle(color: AppColors.textPrimary),
+              TextField(
+                style: const TextStyle(color: AppColors.textPrimary),
                 maxLines: 4,
                 decoration: InputDecoration(
                   hintText: 'What should ARIA remember?',
-                  hintStyle: TextStyle(color: AppColors.textTertiary),
+                  hintStyle: const TextStyle(color: AppColors.textTertiary),
                   filled: true,
                   fillColor: AppColors.background,
-                  border: OutlineInputBorder(
+                  border: const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(14)),
                     borderSide: BorderSide(color: AppColors.border),
                   ),
-                  enabledBorder: OutlineInputBorder(
+                  enabledBorder: const OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(14)),
                     borderSide: BorderSide(color: AppColors.border),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(14)),
+                    borderRadius: const BorderRadius.all(Radius.circular(14)),
                     borderSide: BorderSide(color: AppColors.accent, width: 2),
                   ),
                 ),

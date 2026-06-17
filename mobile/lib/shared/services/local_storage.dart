@@ -66,6 +66,10 @@ class LocalStorage {
   Future<void> saveTheme(String theme) async =>
       _box.put(AppConstants.themeKey, theme);
 
+  int getThemeIndex() => _box.get(AppConstants.themeIndexKey) as int? ?? 0;
+  Future<void> saveThemeIndex(int index) async =>
+      _box.put(AppConstants.themeIndexKey, index);
+
   // Demo mode
   bool isDemoMode() => _box.get('_demo_mode') as bool? ?? false;
   Future<void> setDemoMode(bool value) async => _box.put('_demo_mode', value);

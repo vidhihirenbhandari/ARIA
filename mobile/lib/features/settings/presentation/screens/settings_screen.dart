@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/theme/aria_color_scheme.dart';
+import '../../../../shared/providers/theme_provider.dart';
 import '../providers/settings_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
@@ -30,6 +32,7 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           _buildProfileCard(context, ref),
           const SizedBox(height: 24),
+          _buildAppearanceSection(ref),
           _buildSection('Assistant', [
             _buildNavTile(
               context,
@@ -275,6 +278,102 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAppearanceSection(WidgetRef ref) {
+    final currentIndex = ref.watch(themeIndexProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
+          child: Text(
+            'APPEARANCE',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textTertiary,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 88,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: AriaColorScheme.presets.length,
+            itemBuilder: (_, i) {
+              final scheme = AriaColorScheme.presets[i];
+              final isSelected = i == currentIndex;
+              return GestureDetector(
+                onTap: () => ref.read(themeIndexProvider.notifier).setTheme(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 72,
+                  margin: EdgeInsets.only(right: 12, left: i == 0 ? 4 : 0),
+                  decoration: BoxDecoration(
+                    color: scheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? scheme.accent : Colors.transparent,
+                      width: 2,
+                    ),
+                    boxShadow: isSelected
+                        ? [BoxShadow(color: scheme.accent.withOpacity(0.4), blurRadius: 12)]
+                        : null,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: -8,
+                        right: -8,
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: scheme.accentGradient,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(scheme.emoji, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(height: 2),
+                          Text(
+                            scheme.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
+                      if (isSelected)
+                        Positioned(
+                          top: 6,
+                          left: 6,
+                          child: Container(
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(color: scheme.accent, shape: BoxShape.circle),
+                            child: const Icon(Icons.check_rounded, color: Colors.white, size: 12),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 

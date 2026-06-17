@@ -28,7 +28,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         title: const Text('Calendar', style: AppTextStyles.headlineLarge),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.accent),
+            icon: Icon(Icons.add_rounded, color: AppColors.accent),
             onPressed: _showAddEventSheet,
           ),
         ],
@@ -195,12 +195,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           children: [
             const Text('Add Event', style: AppTextStyles.headlineMedium),
             const SizedBox(height: 16),
-            const TextField(
-              style: TextStyle(color: AppColors.textPrimary),
+            TextField(
+              style: const TextStyle(color: AppColors.textPrimary),
               decoration: InputDecoration(
                 labelText: 'Event title',
-                labelStyle: TextStyle(color: AppColors.textSecondary),
-                enabledBorder: UnderlineInputBorder(
+                labelStyle: const TextStyle(color: AppColors.textSecondary),
+                enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: AppColors.border),
                 ),
                 focusedBorder: UnderlineInputBorder(

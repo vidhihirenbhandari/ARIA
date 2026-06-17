@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/theme/aria_color_scheme.dart';
+import '../../../../shared/providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -61,7 +63,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   void _nextPage() {
-    if (_currentPage < 4) {
+    if (_currentPage < 5) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOutCubic,
@@ -98,6 +100,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 children: [
                   _buildWelcomePage(),
                   _buildNamePage(),
+                  _buildThemePage(),
                   _buildCalendarPage(),
                   _buildCommsPage(),
                   _buildPrivacyPage(),
@@ -115,7 +118,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
-        children: List.generate(5, (i) {
+        children: List.generate(6, (i) {
           return Expanded(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
@@ -281,7 +284,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  borderSide: BorderSide(color: AppColors.accent, width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -324,6 +327,108 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   ],
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemePage() {
+    final currentIndex = ref.watch(themeIndexProvider);
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          const Text('Choose Your\nColour Scheme', style: AppTextStyles.displayMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Pick a palette that feels like you. You can change this anytime in Settings.',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 36),
+          Expanded(
+            child: GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.3,
+              ),
+              itemCount: AriaColorScheme.presets.length,
+              itemBuilder: (_, i) {
+                final scheme = AriaColorScheme.presets[i];
+                final isSelected = i == currentIndex;
+                return GestureDetector(
+                  onTap: () => ref.read(themeIndexProvider.notifier).setTheme(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? scheme.accent : Colors.transparent,
+                        width: 2,
+                      ),
+                      boxShadow: isSelected
+                          ? [BoxShadow(color: scheme.accent.withOpacity(0.4), blurRadius: 16, spreadRadius: 2)]
+                          : null,
+                    ),
+                    child: Stack(
+                      children: [
+                        // Mini preview gradient blob
+                        Positioned(
+                          top: -12,
+                          right: -12,
+                          child: Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              gradient: scheme.accentGradient,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(scheme.emoji, style: const TextStyle(fontSize: 22)),
+                              const SizedBox(height: 4),
+                              Text(
+                                scheme.name,
+                                style: AppTextStyles.labelLarge.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          Positioned(
+                            top: 10,
+                            left: 10,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: scheme.accent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.check_rounded, color: Colors.white, size: 14),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -568,7 +673,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
                 child: Center(
                   child: Text(
-                    _currentPage == 4 ? 'Get Started' : 'Continue',
+                    _currentPage == 5 ? 'Get Started' : 'Continue',
                     style: AppTextStyles.button,
                   ),
                 ),

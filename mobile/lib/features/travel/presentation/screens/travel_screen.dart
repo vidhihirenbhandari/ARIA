@@ -196,7 +196,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
                   color: AppColors.accent.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.flight_takeoff_rounded, color: AppColors.accent, size: 22),
+                child: Icon(Icons.flight_takeoff_rounded, color: AppColors.accent, size: 22),
               ),
               const SizedBox(width: 12),
               Column(
@@ -233,7 +233,7 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Icon(Icons.flight, color: AppColors.accent, size: 16),
+                    Icon(Icons.flight, color: AppColors.accent, size: 16),
                     if (arrTime.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(arrTime, style: AppTextStyles.caption),

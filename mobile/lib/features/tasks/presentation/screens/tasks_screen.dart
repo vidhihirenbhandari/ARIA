@@ -82,7 +82,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
         title: const Text('Tasks', style: AppTextStyles.headlineLarge),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.accent),
+            icon: Icon(Icons.add_rounded, color: AppColors.accent),
             onPressed: _showAddTask,
           ),
         ],
@@ -172,10 +172,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen>
                 controller: _addController,
                 style: const TextStyle(color: AppColors.textPrimary),
                 autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'What needs to be done?',
-                  hintStyle: TextStyle(color: AppColors.textTertiary),
-                  enabledBorder: UnderlineInputBorder(
+                  hintStyle: const TextStyle(color: AppColors.textTertiary),
+                  enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: AppColors.border),
                   ),
                   focusedBorder: UnderlineInputBorder(

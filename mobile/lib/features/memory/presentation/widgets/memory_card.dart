@@ -76,7 +76,7 @@ class MemoryCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.person_outline, size: 12, color: AppColors.secondary),
+          Icon(Icons.person_outline, size: 12, color: AppColors.secondary),
           const SizedBox(width: 4),
           Text(
             name,

@@ -263,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 const SizedBox(height: 32),
 
                 if (authState.isLoading)
-                  const Center(
+                  Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation(AppColors.accent),
                     ),
@@ -380,7 +380,7 @@ class _EmailSignInForm extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
-                  const BorderSide(color: AppColors.accent, width: 1.5),
+                  BorderSide(color: AppColors.accent, width: 1.5),
             ),
           ),
         ),
@@ -417,7 +417,7 @@ class _EmailSignInForm extends StatelessWidget {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
-                  const BorderSide(color: AppColors.accent, width: 1.5),
+                  BorderSide(color: AppColors.accent, width: 1.5),
             ),
           ),
         ),

@@ -225,7 +225,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               color: AppColors.accent.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.notifications_outlined, color: AppColors.accent, size: 16),
+            child: Icon(Icons.notifications_outlined, color: AppColors.accent, size: 16),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -254,7 +254,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -445,9 +445,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _buildInputBar(ChatState chatState) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        border: const Border(top: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [

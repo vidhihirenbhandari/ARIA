@@ -81,7 +81,7 @@ class SuggestionCard extends StatelessWidget {
               color: AppColors.accent.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.calendar_today_outlined, color: AppColors.accent, size: 18),
+            child: Icon(Icons.calendar_today_outlined, color: AppColors.accent, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(

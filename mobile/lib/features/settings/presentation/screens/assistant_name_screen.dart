@@ -51,7 +51,7 @@ class _AssistantNameScreenState extends ConsumerState<AssistantNameScreen> {
         actions: [
           TextButton(
             onPressed: _save,
-            child: const Text('Save', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+            child: Text('Save', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -132,7 +132,7 @@ class _AssistantNameScreenState extends ConsumerState<AssistantNameScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: AppColors.accent, width: 2),
+                  borderSide: BorderSide(color: AppColors.accent, width: 2),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),

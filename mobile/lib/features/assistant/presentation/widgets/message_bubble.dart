@@ -55,7 +55,7 @@ class MessageBubble extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.secondary.withOpacity(0.4)),
       ),
-      child: const Icon(Icons.person_rounded, color: AppColors.secondary, size: 18),
+      child: Icon(Icons.person_rounded, color: AppColors.secondary, size: 18),
     );
   }
 

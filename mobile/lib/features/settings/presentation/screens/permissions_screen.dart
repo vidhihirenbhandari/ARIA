@@ -196,7 +196,7 @@ class PermissionsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               SliderTheme(
-                data: const SliderThemeData(
+                data: SliderThemeData(
                   activeTrackColor: AppColors.accent,
                   inactiveTrackColor: AppColors.border,
                   thumbColor: AppColors.accent,
