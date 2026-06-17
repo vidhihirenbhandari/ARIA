@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 
@@ -11,13 +12,15 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.background,
+      // Outfit applied globally — all Text widgets inherit this font
+      fontFamily: GoogleFonts.outfit().fontFamily,
       colorScheme: ColorScheme.dark(
         primary: AppColors.accent,
         secondary: AppColors.secondary,
         surface: AppColors.surface,
         error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
+        onPrimary: const Color(0xFF0D0D15),
+        onSecondary: const Color(0xFF0D0D15),
         onSurface: AppColors.textPrimary,
         onError: Colors.white,
         outline: AppColors.border,
@@ -66,7 +69,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.accent,
-          foregroundColor: Colors.white,
+          foregroundColor: const Color(0xFF0D0D15),
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
@@ -117,22 +120,15 @@ class AppTheme {
         labelStyle: AppTextStyles.labelLarge.copyWith(
           color: AppColors.textSecondary,
         ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.accent;
-          }
+          if (states.contains(WidgetState.selected)) return AppColors.accent;
           return AppColors.textTertiary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return AppColors.accent.withOpacity(0.3);
-          }
+          if (states.contains(WidgetState.selected)) return AppColors.accent.withOpacity(0.3);
           return AppColors.border;
         }),
       ),
@@ -151,9 +147,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surfaceElevated,
         contentTextStyle: AppTextStyles.bodyMedium,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
       dialogTheme: DialogThemeData(
@@ -163,13 +157,11 @@ class AppTheme {
           side: const BorderSide(color: AppColors.border),
         ),
         titleTextStyle: AppTextStyles.headlineMedium,
-        contentTextStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        contentTextStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
       ),
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
@@ -178,38 +170,7 @@ class AppTheme {
         selectedColor: AppColors.accent.withOpacity(0.2),
         labelStyle: AppTextStyles.labelMedium,
         side: const BorderSide(color: AppColors.border),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
-    );
-  }
-
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF8F9FF),
-      colorScheme: ColorScheme.light(
-        primary: AppColors.accent,
-        secondary: AppColors.secondary,
-        surface: Colors.white,
-        error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Color(0xFF0D0D1A),
-        onError: Colors.white,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFF8F9FF),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        iconTheme: IconThemeData(color: Color(0xFF0D0D1A)),
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }

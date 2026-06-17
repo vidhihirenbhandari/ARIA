@@ -5,58 +5,58 @@ class AppColors {
   AppColors._();
 
   // Backgrounds — mutable so applyScheme() can update them
-  static Color background = const Color(0xFF0D0D1A);
-  static Color surface = const Color(0xFF1A1A2E);
-  static Color surfaceElevated = const Color(0xFF16213E);
-  static Color cardBackground = const Color(0xFF0F172A);
+  static Color background = const Color(0xFF0D0D15);
+  static Color surface = const Color(0xFF131320);
+  static Color surfaceElevated = const Color(0xFF1A1A2C);
+  static Color cardBackground = const Color(0xFF161624);
 
-  // Accents — mutable
-  static Color accent = const Color(0xFF4A9EFF);
-  static Color accentDark = const Color(0xFF2563EB);
-  static Color accentLight = const Color(0xFF93C5FD);
-  static Color secondary = const Color(0xFF8B5CF6);
-  static Color secondaryDark = const Color(0xFF6D28D9);
-  static Color secondaryLight = const Color(0xFFC4B5FD);
+  // Accents — mutable (gold + mauve default)
+  static Color accent = const Color(0xFFD4A84B);
+  static Color accentDark = const Color(0xFF9E7A30);
+  static Color accentLight = const Color(0xFFE8C97A);
+  static Color secondary = const Color(0xFFB998D8);
+  static Color secondaryDark = const Color(0xFF8B6AAF);
+  static Color secondaryLight = const Color(0xFFD4B8EC);
 
-  // Status — constant, never changes with theme
-  static const Color success = Color(0xFF10B981);
-  static const Color successLight = Color(0xFFD1FAE5);
-  static const Color error = Color(0xFFEF4444);
-  static const Color errorLight = Color(0xFFFEE2E2);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color warningLight = Color(0xFFFEF3C7);
+  // Status — constant
+  static const Color success = Color(0xFF52B788);
+  static const Color successLight = Color(0xFFD8F3DC);
+  static const Color error = Color(0xFFE55555);
+  static const Color errorLight = Color(0xFFFFE0E0);
+  static const Color warning = Color(0xFFE8A832);
+  static const Color warningLight = Color(0xFFFFF0CC);
 
-  // Text — constant
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textTertiary = Color(0xFF475569);
-  static const Color textDisabled = Color(0xFF334155);
+  // Text — constant (warm cream palette)
+  static const Color textPrimary = Color(0xFFF0ECE0);
+  static const Color textSecondary = Color(0xFF9A9590);
+  static const Color textTertiary = Color(0xFF5E5A55);
+  static const Color textDisabled = Color(0xFF3D3A38);
 
   // Borders — constant
-  static const Color border = Color(0xFF1E293B);
-  static const Color borderLight = Color(0xFF334155);
+  static const Color border = Color(0xFF252540);
+  static const Color borderLight = Color(0xFF2E2E4A);
 
   // Gradients — mutable
   static LinearGradient accentGradient = const LinearGradient(
-    colors: [Color(0xFF4A9EFF), Color(0xFF8B5CF6)],
+    colors: [Color(0xFFD4A84B), Color(0xFFB998D8)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static LinearGradient backgroundGradient = const LinearGradient(
-    colors: [Color(0xFF0D0D1A), Color(0xFF1A1A2E)],
+    colors: [Color(0xFF0D0D15), Color(0xFF131320)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static LinearGradient cardGradient = const LinearGradient(
-    colors: [Color(0xFF1A1A2E), Color(0xFF0F172A)],
+    colors: [Color(0xFF161624), Color(0xFF0D0D15)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static LinearGradient userBubbleGradient = const LinearGradient(
-    colors: [Color(0xFF4A9EFF), Color(0xFF2563EB)],
+    colors: [Color(0xFFD4A84B), Color(0xFF9E7A30)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -72,10 +72,9 @@ class AppColors {
     backgroundGradient = scheme.backgroundGradient;
     cardGradient = scheme.cardGradient;
     userBubbleGradient = scheme.userBubbleGradient;
-    // derived shades
-    accentDark = Color.lerp(scheme.accent, Colors.black, 0.25)!;
+    accentDark = Color.lerp(scheme.accent, Colors.black, 0.3)!;
     accentLight = Color.lerp(scheme.accent, Colors.white, 0.4)!;
-    secondaryDark = Color.lerp(scheme.accentSecondary, Colors.black, 0.25)!;
+    secondaryDark = Color.lerp(scheme.accentSecondary, Colors.black, 0.3)!;
     secondaryLight = Color.lerp(scheme.accentSecondary, Colors.white, 0.4)!;
   }
 }
