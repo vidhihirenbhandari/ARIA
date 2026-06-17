@@ -74,6 +74,15 @@ class LocalStorage {
   bool isDemoMode() => _box.get('_demo_mode') as bool? ?? false;
   Future<void> setDemoMode(bool value) async => _box.put('_demo_mode', value);
 
+  // API Key
+  String? getApiKey() => _box.get('anthropic_api_key') as String?;
+  Future<void> saveApiKey(String key) async => _box.put('anthropic_api_key', key);
+  Future<void> clearApiKey() async => _box.delete('anthropic_api_key');
+
+  // User Profile
+  Map<String, dynamic>? getUserProfile() => getJson('user_profile');
+  Future<void> saveUserProfile(Map<String, dynamic> profile) async => putJson('user_profile', profile);
+
   // Generic
   Future<void> put(String key, dynamic value) async => _box.put(key, value);
   dynamic get(String key) => _box.get(key);
