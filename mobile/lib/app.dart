@@ -26,7 +26,7 @@ class AriaApp extends ConsumerWidget {
       child: MaterialApp.router(
         title: 'ARIA',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
+        theme: AppTheme.darkTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.dark,
         routerConfig: router,
