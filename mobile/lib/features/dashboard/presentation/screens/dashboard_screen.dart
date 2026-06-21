@@ -7,6 +7,7 @@ import '../../../../shared/models/aria_event.dart';
 import '../../../../shared/providers/calendar_events_provider.dart';
 import '../../../../shared/providers/commitments_provider.dart';
 import '../../../../shared/providers/people_provider.dart';
+import '../../../../shared/providers/subscriptions_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -232,6 +233,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final actions = [
       {'icon': Icons.add_outlined, 'label': 'Add Event', 'route': '/home/calendar'},
       {'icon': Icons.task_outlined, 'label': 'New Task', 'route': '/home/tasks'},
+      {'icon': Icons.subscriptions_outlined, 'label': 'Renewals', 'route': '/home/renewals'},
       {'icon': Icons.flight_outlined, 'label': 'Travel', 'route': '/travel'},
       {'icon': Icons.psychology_outlined, 'label': 'Memory', 'route': '/home/memory'},
     ];
@@ -315,9 +317,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildAriaInsights() {
     final commitments = ref.watch(commitmentsProvider);
     final people = ref.watch(peopleProvider);
+    final subscriptions = ref.watch(subscriptionsProvider);
     final now = DateTime.now();
 
     final insights = <_InsightItem>[];
+
+    // Subscription / renewal alerts
+    for (final s in subscriptions) {
+      if (!s.isActive) continue;
+      if (s.isOverdue) {
+        final d = s.daysUntilRenewal.abs();
+        insights.insert(
+          0,
+          _InsightItem(
+            icon: Icons.warning_amber_rounded,
+            color: AppColors.error,
+            text: '${s.name} expired $d day${d == 1 ? '' : 's'} ago — renew now',
+            route: '/home/renewals',
+          ),
+        );
+      } else if (s.isAlertSoon) {
+        final d = s.daysUntilRenewal;
+        final label = d == 0 ? 'today' : d == 1 ? 'tomorrow' : 'in $d days';
+        insights.add(_InsightItem(
+          icon: Icons.notifications_active_outlined,
+          color: AppColors.warning,
+          text: '${s.name} renews $label${s.amountStr != null ? ' (${s.amountStr})' : ''}',
+          route: '/home/renewals',
+        ));
+      }
+    }
 
     for (final c in commitments) {
       if (!c.isCompleted && c.dueDate != null && c.dueDate!.isBefore(now) && c.direction == 'i_promised') {

@@ -12,6 +12,7 @@ import '../../features/memory/presentation/screens/memory_screen.dart';
 import '../../features/tasks/presentation/screens/tasks_screen.dart';
 import '../../features/inbox/presentation/screens/inbox_screen.dart';
 import '../../features/people/presentation/screens/people_screen.dart';
+import '../../features/renewals/presentation/screens/renewals_screen.dart';
 import '../../features/travel/presentation/screens/travel_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/permissions_screen.dart';
@@ -115,6 +116,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'people',
                 builder: (context, state) => const PeopleScreen(),
+              ),
+              GoRoute(
+                path: 'renewals',
+                builder: (context, state) => const RenewalsScreen(),
               ),
             ],
           ),

@@ -28,6 +28,18 @@ void main() async {
   final storage = LocalStorage();
   await storage.init();
 
+  // Track sideload install date on first launch after a fresh sideload.
+  // The flag 'sideload_refreshed' is written once per install; the subscriptions
+  // provider reads it on first load to create the iOS cert renewal entry.
+  final prevInstall = storage.get('sideload_install_date') as String?;
+  if (prevInstall == null) {
+    await storage.put('sideload_install_date', DateTime.now().toIso8601String());
+    await storage.put('sideload_refreshed', true);
+  } else {
+    // Clear flag so the provider only processes it once.
+    await storage.put('sideload_refreshed', false);
+  }
+
   runApp(
     ProviderScope(
       overrides: [
