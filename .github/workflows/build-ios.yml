@@ -2,7 +2,7 @@ name: Build iOS IPA
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, claude/funny-babbage-xjn13o]
     tags: ['v*']
   workflow_dispatch:
 
