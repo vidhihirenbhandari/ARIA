@@ -17,6 +17,7 @@ import '../../features/travel/presentation/screens/travel_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/permissions_screen.dart';
 import '../../features/settings/presentation/screens/assistant_name_screen.dart';
+import '../../features/briefing/presentation/screens/briefing_screen.dart';
 import '../../main_navigation.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -120,6 +121,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'renewals',
                 builder: (context, state) => const RenewalsScreen(),
+              ),
+              GoRoute(
+                path: 'briefing',
+                builder: (context, state) => const BriefingScreen(),
               ),
             ],
           ),

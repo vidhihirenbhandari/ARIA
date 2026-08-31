@@ -231,6 +231,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildQuickActions() {
     final actions = [
+      {'icon': Icons.wb_sunny_outlined, 'label': 'Morning Brief', 'route': '/home/briefing'},
       {'icon': Icons.add_outlined, 'label': 'Add Event', 'route': '/home/calendar'},
       {'icon': Icons.task_outlined, 'label': 'New Task', 'route': '/home/tasks'},
       {'icon': Icons.subscriptions_outlined, 'label': 'Renewals', 'route': '/home/renewals'},
