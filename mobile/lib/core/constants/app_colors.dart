@@ -1,62 +1,80 @@
 import 'package:flutter/material.dart';
+import '../theme/aria_color_scheme.dart';
 
 class AppColors {
   AppColors._();
 
-  // Backgrounds
-  static const Color background = Color(0xFF0D0D1A);
-  static const Color surface = Color(0xFF1A1A2E);
-  static const Color surfaceElevated = Color(0xFF16213E);
-  static const Color cardBackground = Color(0xFF0F172A);
+  // Backgrounds — mutable so applyScheme() can update them
+  static Color background = const Color(0xFF0D0D15);
+  static Color surface = const Color(0xFF131320);
+  static Color surfaceElevated = const Color(0xFF1A1A2C);
+  static Color cardBackground = const Color(0xFF161624);
 
-  // Accents
-  static const Color accent = Color(0xFF4A9EFF);
-  static const Color accentDark = Color(0xFF2563EB);
-  static const Color accentLight = Color(0xFF93C5FD);
-  static const Color secondary = Color(0xFF8B5CF6);
-  static const Color secondaryDark = Color(0xFF6D28D9);
-  static const Color secondaryLight = Color(0xFFC4B5FD);
+  // Accents — mutable (gold + mauve default)
+  static Color accent = const Color(0xFFD4A84B);
+  static Color accentDark = const Color(0xFF9E7A30);
+  static Color accentLight = const Color(0xFFE8C97A);
+  static Color secondary = const Color(0xFFB998D8);
+  static Color secondaryDark = const Color(0xFF8B6AAF);
+  static Color secondaryLight = const Color(0xFFD4B8EC);
 
-  // Status
-  static const Color success = Color(0xFF10B981);
-  static const Color successLight = Color(0xFFD1FAE5);
-  static const Color error = Color(0xFFEF4444);
-  static const Color errorLight = Color(0xFFFEE2E2);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color warningLight = Color(0xFFFEF3C7);
+  // Status — constant
+  static const Color success = Color(0xFF52B788);
+  static const Color successLight = Color(0xFFD8F3DC);
+  static const Color error = Color(0xFFE55555);
+  static const Color errorLight = Color(0xFFFFE0E0);
+  static const Color warning = Color(0xFFE8A832);
+  static const Color warningLight = Color(0xFFFFF0CC);
 
-  // Text
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF94A3B8);
-  static const Color textTertiary = Color(0xFF475569);
-  static const Color textDisabled = Color(0xFF334155);
+  // Text — constant (warm cream palette)
+  static const Color textPrimary = Color(0xFFF0ECE0);
+  static const Color textSecondary = Color(0xFF9A9590);
+  static const Color textTertiary = Color(0xFF5E5A55);
+  static const Color textDisabled = Color(0xFF3D3A38);
 
-  // Borders
-  static const Color border = Color(0xFF1E293B);
-  static const Color borderLight = Color(0xFF334155);
+  // Borders — constant
+  static const Color border = Color(0xFF252540);
+  static const Color borderLight = Color(0xFF2E2E4A);
 
-  // Gradients
-  static const LinearGradient accentGradient = LinearGradient(
-    colors: [Color(0xFF4A9EFF), Color(0xFF8B5CF6)],
+  // Gradients — mutable
+  static LinearGradient accentGradient = const LinearGradient(
+    colors: [Color(0xFFD4A84B), Color(0xFFB998D8)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient backgroundGradient = LinearGradient(
-    colors: [Color(0xFF0D0D1A), Color(0xFF1A1A2E)],
+  static LinearGradient backgroundGradient = const LinearGradient(
+    colors: [Color(0xFF0D0D15), Color(0xFF131320)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
-  static const LinearGradient cardGradient = LinearGradient(
-    colors: [Color(0xFF1A1A2E), Color(0xFF0F172A)],
+  static LinearGradient cardGradient = const LinearGradient(
+    colors: [Color(0xFF161624), Color(0xFF0D0D15)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient userBubbleGradient = LinearGradient(
-    colors: [Color(0xFF4A9EFF), Color(0xFF2563EB)],
+  static LinearGradient userBubbleGradient = const LinearGradient(
+    colors: [Color(0xFFD4A84B), Color(0xFF9E7A30)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static void applyScheme(AriaColorScheme scheme) {
+    background = scheme.background;
+    surface = scheme.surface;
+    surfaceElevated = scheme.surfaceElevated;
+    cardBackground = scheme.cardBackground;
+    accent = scheme.accent;
+    secondary = scheme.accentSecondary;
+    accentGradient = scheme.accentGradient;
+    backgroundGradient = scheme.backgroundGradient;
+    cardGradient = scheme.cardGradient;
+    userBubbleGradient = scheme.userBubbleGradient;
+    accentDark = Color.lerp(scheme.accent, Colors.black, 0.3)!;
+    accentLight = Color.lerp(scheme.accent, Colors.white, 0.4)!;
+    secondaryDark = Color.lerp(scheme.accentSecondary, Colors.black, 0.3)!;
+    secondaryLight = Color.lerp(scheme.accentSecondary, Colors.white, 0.4)!;
+  }
 }

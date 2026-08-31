@@ -1,0 +1,40 @@
+workflows:
+  ios-release:
+    name: iOS Release (TestFlight)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic
+    environment:
+      flutter: 3.27.4
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.aria.aria_mobile
+    scripts:
+      - name: Install dependencies
+        script: cd mobile && flutter pub get
+      - name: Build IPA
+        script: cd mobile && flutter build ipa --release
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+
+  android-release:
+    name: Android Release APK
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      flutter: 3.27.4
+      java: 17
+    scripts:
+      - name: Install dependencies
+        script: cd mobile && flutter pub get
+      - name: Build APK
+        script: cd mobile && flutter build apk --release --split-per-abi
+    artifacts:
+      - mobile/build/app/outputs/flutter-apk/*.apk

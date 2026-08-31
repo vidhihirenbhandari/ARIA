@@ -1,0 +1,42 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main, master, claude/funny-babbage-xjn13o]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Build iOS (unsigned — for Sideloadly install)
+        working-directory: mobile
+        run: flutter build ios --release --no-codesign
+
+      - name: Package into unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -r mobile/build/ios/iphoneos/Runner.app Payload/ARIA.app
+          zip -r ARIA-unsigned.ipa Payload/
+          echo "IPA size: $(du -sh ARIA-unsigned.ipa | cut -f1)"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ARIA-iOS-unsigned
+          path: ARIA-unsigned.ipa
+          retention-days: 30
