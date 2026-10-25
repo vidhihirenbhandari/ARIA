@@ -12,54 +12,6 @@ String _generateId() {
   return '${ts}_$suffix';
 }
 
-// ── Default seed habits ───────────────────────────────────────────────────
-
-List<Habit> _defaultHabits() {
-  final now = DateTime.now();
-  return [
-    Habit(
-      id: _generateId(),
-      name: 'Drink Water',
-      emoji: '💧',
-      frequency: 'daily',
-      targetCount: 1,
-      completedDates: [],
-      color: 0xFF3A7BD5,
-      createdAt: now,
-    ),
-    Habit(
-      id: _generateId(),
-      name: 'Exercise',
-      emoji: '🏃',
-      frequency: 'daily',
-      targetCount: 1,
-      completedDates: [],
-      color: 0xFF10B981,
-      createdAt: now,
-    ),
-    Habit(
-      id: _generateId(),
-      name: 'Read',
-      emoji: '📚',
-      frequency: 'daily',
-      targetCount: 1,
-      completedDates: [],
-      color: 0xFF8B5CF6,
-      createdAt: now,
-    ),
-    Habit(
-      id: _generateId(),
-      name: 'Sleep by 11pm',
-      emoji: '😴',
-      frequency: 'daily',
-      targetCount: 1,
-      completedDates: [],
-      color: 0xFF4F46E5,
-      createdAt: now,
-    ),
-  ];
-}
-
 // ── Provider ──────────────────────────────────────────────────────────────
 
 final habitsProvider =
@@ -78,8 +30,7 @@ class HabitsNotifier extends StateNotifier<List<Habit>> {
   void _load() {
     final raw = _storage.getList(_kHabitsKey);
     if (raw.isEmpty) {
-      final defaults = _defaultHabits();
-      state = defaults;
+      state = [];
       _persist();
     } else {
       state = raw.map(Habit.fromJson).toList();

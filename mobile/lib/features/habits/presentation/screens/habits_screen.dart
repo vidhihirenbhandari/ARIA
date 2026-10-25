@@ -26,7 +26,7 @@ class HabitsScreen extends ConsumerWidget {
         centerTitle: false,
       ),
       body: habits.isEmpty
-          ? _buildEmpty(context)
+          ? _buildEmpty(context, ref)
           : CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
@@ -49,20 +49,39 @@ class HabitsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmpty(BuildContext context) {
+  Widget _buildEmpty(BuildContext context, WidgetRef ref) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('🌱', style: const TextStyle(fontSize: 56)),
-          const SizedBox(height: 16),
-          Text('No habits yet', style: AppTextStyles.headlineMedium),
-          const SizedBox(height: 8),
-          Text(
-            'Tap + to add your first habit',
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('🌱', style: TextStyle(fontSize: 64)),
+            const SizedBox(height: 20),
+            Text('Build your habits', style: AppTextStyles.headlineMedium),
+            const SizedBox(height: 10),
+            Text(
+              'Track anything that matters to you — no defaults, just yours.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            GestureDetector(
+              onTap: () => _showAddSheet(context, ref),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  borderRadius: BorderRadius.circular(32),
+                ),
+                child: Text(
+                  'Add your first habit',
+                  style: AppTextStyles.button.copyWith(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -321,25 +340,20 @@ class _AddHabitSheet extends StatefulWidget {
 
 class _AddHabitSheetState extends State<_AddHabitSheet> {
   final _nameCtrl = TextEditingController();
-  String _selectedEmoji = '⭐';
+  final _emojiCtrl = TextEditingController(text: '✅');
   String _selectedFrequency = 'daily';
   int _selectedColor = 0xFF3A7BD5;
-
-  static const _emojis = [
-    '💧', '🏃', '📚', '😴', '🧘', '🥗',
-    '💊', '🎯', '✍️', '🎵', '🌿', '❤️',
-  ];
 
   static const _colors = [
     0xFF3A7BD5,
     0xFF10B981,
     0xFF8B5CF6,
-    0xFF4F46E5,
+    0xFFEC4899,
     0xFFEF4444,
-    0xFFF59E0B,
+    0xFFE8803A,
+    0xFF4F46E5,
+    0xFF6B7280,
   ];
-
-  static const _frequencies = ['daily', 'weekdays', 'weekends'];
 
   @override
   void dispose() {
