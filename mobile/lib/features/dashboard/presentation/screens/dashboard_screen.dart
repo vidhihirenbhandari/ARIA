@@ -369,6 +369,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Subscription / renewal alerts
     for (final s in subscriptions) {
       if (!s.isActive) continue;
+      // Trial cancellation alert — highest priority
+      if (s.isTrial && s.trialEndDate != null) {
+        final daysLeft = s.daysUntilTrialEnd ?? 99;
+        if (daysLeft <= 1) {
+          final label = daysLeft <= 0 ? 'today' : 'tomorrow';
+          insights.insert(
+            0,
+            _InsightItem(
+              icon: Icons.warning_amber_rounded,
+              color: const Color(0xFFE67E22),
+              text: '⚠️ ${s.name} trial ends $label — cancel to avoid being charged${s.amountStr != null ? ' ${s.amountStr}' : ''}',
+              route: '/home/renewals',
+            ),
+          );
+        }
+      }
       if (s.isOverdue) {
         final d = s.daysUntilRenewal.abs();
         insights.insert(
@@ -434,6 +450,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           route: '/home/people',
         ));
       }
+    }
+
+    // Watchlist insight — most urgent item with alertDate within 7 days
+    final urgent = watchlist
+        .where((w) => !w.isResolved && w.alertDate != null && w.alertDate!.difference(now).inDays <= 7 && w.alertDate!.isAfter(now))
+        .toList()
+      ..sort((a, b) => a.alertDate!.compareTo(b.alertDate!));
+    if (urgent.isNotEmpty) {
+      final w = urgent.first;
+      final daysLeft = w.alertDate!.difference(now).inDays;
+      final dayLabel = daysLeft == 0 ? 'today' : daysLeft == 1 ? 'tomorrow' : 'in $daysLeft days';
+      insights.add(_InsightItem(
+        icon: Icons.visibility_outlined,
+        color: const Color(0xFF3A7BD5),
+        text: '👁 Watching: ${w.title} — alert $dayLabel',
+        route: '/home/watchlist',
+      ));
     }
 
     // Expense spending insight
