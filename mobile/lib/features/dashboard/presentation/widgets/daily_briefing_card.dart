@@ -45,39 +45,14 @@ class DailyBriefingCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withOpacity(0.25)),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'A',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1,
-                    height: 1,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(assistantName,
-                      style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
-                  Text(
-                    'Daily Briefing',
-                    style: AppTextStyles.caption.copyWith(color: Colors.white.withOpacity(0.65)),
-                  ),
-                ],
+              Text(assistantName,
+                  style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
+              Text(
+                'Daily Briefing',
+                style: AppTextStyles.caption.copyWith(color: Colors.white.withOpacity(0.65)),
               ),
             ],
           ),

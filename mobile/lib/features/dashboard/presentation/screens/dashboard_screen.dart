@@ -12,6 +12,7 @@ import '../../../../shared/providers/subscriptions_provider.dart';
 import '../../../../shared/providers/expenses_provider.dart';
 import '../../../../shared/providers/packing_provider.dart';
 import '../../../../shared/providers/watchlist_provider.dart';
+import '../../../../shared/providers/weather_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -27,37 +28,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  // Today's calendar events — Phase 2 will pull from calendar API
-  final List<Event> _todayEvents = [
-    Event(
-      id: '1',
-      userId: 'u1',
-      title: 'Team Standup',
-      startTime: DateTime.now().copyWith(hour: 10, minute: 0),
-      endTime: DateTime.now().copyWith(hour: 10, minute: 30),
-      source: 'google_calendar',
-      status: 'approved',
-    ),
-    Event(
-      id: '2',
-      userId: 'u1',
-      title: 'Client Call — Raj Sharma',
-      startTime: DateTime.now().copyWith(hour: 14, minute: 0),
-      endTime: DateTime.now().copyWith(hour: 15, minute: 0),
-      location: 'Google Meet',
-      source: 'google_calendar',
-      status: 'approved',
-    ),
-    Event(
-      id: '3',
-      userId: 'u1',
-      title: 'Product Review',
-      startTime: DateTime.now().copyWith(hour: 16, minute: 30),
-      endTime: DateTime.now().copyWith(hour: 17, minute: 30),
-      source: 'google_calendar',
-      status: 'approved',
-    ),
-  ];
 
   String get _greeting {
     final hour = DateTime.now().hour;
@@ -70,6 +40,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final briefingAsync = ref.watch(dailyBriefingProvider);
     final suggestionsAsync = ref.watch(pendingSuggestionsProvider);
+    final allEvents = ref.watch(calendarEventsProvider);
+    final now = DateTime.now();
+    final todayEvents = allEvents.where((e) {
+      return e.startTime.year == now.year &&
+          e.startTime.month == now.month &&
+          e.startTime.day == now.day &&
+          e.status == 'approved';
+    }).toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -85,10 +64,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 greeting: '${briefing.greeting}, Vidhi',
                 summary: briefing.summary.isNotEmpty
                     ? briefing.summary
-                    : 'You have ${_todayEvents.length} meetings today.',
+                    : 'You have ${todayEvents.length} meetings today.',
                 meetingsCount: briefing.meetingsCount > 0
                     ? briefing.meetingsCount
-                    : _todayEvents.length,
+                    : todayEvents.length,
                 tasksCount: briefing.tasksCount,
                 pendingCount: briefing.pendingCount,
               ),
@@ -96,8 +75,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               error: (_, __) => DailyBriefingCard(
                 assistantName: 'ARIA',
                 greeting: '$_greeting, Vidhi',
-                summary: 'You have ${_todayEvents.length} meetings today.',
-                meetingsCount: _todayEvents.length,
+                summary: 'You have ${todayEvents.length} meetings today.',
+                meetingsCount: todayEvents.length,
                 tasksCount: 0,
                 pendingCount: 0,
               ),
@@ -126,12 +105,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     await ref
                         .read(eventsRepositoryProvider)
                         .approveEvent(s['id'] as String);
+                    final startTime = s['startTime'];
+                    final endTime = s['endTime'];
+                    if (startTime == null || endTime == null) return;
                     final approvedEvent = Event(
                       id: s['id'] as String,
                       userId: 'demo-user',
                       title: s['title'] as String,
-                      startTime: s['startTime'] as DateTime,
-                      endTime: s['endTime'] as DateTime,
+                      startTime: startTime as DateTime,
+                      endTime: endTime as DateTime,
                       location: s['location'] as String?,
                       source: s['type'] as String,
                       status: 'approved',
@@ -157,7 +139,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           SliverToBoxAdapter(child: _buildAriaInsights()),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
           SliverToBoxAdapter(
-            child: UpcomingEventsWidget(events: _todayEvents),
+            child: UpcomingEventsWidget(events: todayEvents),
           ),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
           SliverToBoxAdapter(child: _buildQuickActions()),
@@ -337,9 +319,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final packingItems = ref.watch(packingProvider);
     final activeContexts = ref.watch(activePackingContextsProvider);
     final watchlist = ref.watch(watchlistProvider);
+    final weatherAsync = ref.watch(weatherProvider);
     final now = DateTime.now();
 
     final insights = <_InsightItem>[];
+
+    // Weather-based packing insight
+    weatherAsync.whenData((weather) {
+      insights.add(_InsightItem(
+        icon: weather.isRainy
+            ? Icons.umbrella_outlined
+            : weather.isCold
+                ? Icons.thermostat_outlined
+                : weather.isHot
+                    ? Icons.water_drop_outlined
+                    : Icons.wb_sunny_outlined,
+        color: weather.isRainy
+            ? const Color(0xFF3A7BD5)
+            : weather.isCold
+                ? const Color(0xFF8B5CF6)
+                : weather.isHot
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF10B981),
+        text: '${weather.packingEmoji} ${weather.packingHint}',
+        route: '/home/packing',
+      ));
+    });
 
     // Packing insight — show if not all visible items are packed
     final visiblePacking = packingItems.where((i) =>
