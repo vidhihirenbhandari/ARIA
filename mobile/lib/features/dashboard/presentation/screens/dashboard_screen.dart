@@ -8,6 +8,7 @@ import '../../../../shared/providers/calendar_events_provider.dart';
 import '../../../../shared/providers/commitments_provider.dart';
 import '../../../../shared/providers/people_provider.dart';
 import '../../../../shared/providers/subscriptions_provider.dart';
+import '../../../../shared/providers/expenses_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -237,6 +238,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       {'icon': Icons.subscriptions_outlined, 'label': 'Renewals', 'route': '/home/renewals'},
       {'icon': Icons.flight_outlined, 'label': 'Travel', 'route': '/travel'},
       {'icon': Icons.psychology_outlined, 'label': 'Memory', 'route': '/home/memory'},
+      {'icon': Icons.account_balance_wallet_outlined, 'label': 'Expenses', 'route': '/home/expenses'},
     ];
 
     return Column(
@@ -319,6 +321,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final commitments = ref.watch(commitmentsProvider);
     final people = ref.watch(peopleProvider);
     final subscriptions = ref.watch(subscriptionsProvider);
+    final expensesNotifier = ref.read(expensesProvider.notifier);
     final now = DateTime.now();
 
     final insights = <_InsightItem>[];
@@ -391,6 +394,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           route: '/home/people',
         ));
       }
+    }
+
+    // Expense spending insight
+    final totalThisMonth = expensesNotifier.totalThisMonth();
+    if (totalThisMonth > 10000) {
+      final formatted = totalThisMonth.toStringAsFixed(0);
+      insights.add(_InsightItem(
+        icon: Icons.account_balance_wallet_outlined,
+        color: AppColors.warning,
+        text: "You've spent ₹$formatted this month — tap to review",
+        route: '/home/expenses',
+      ));
     }
 
     if (insights.isEmpty) {
