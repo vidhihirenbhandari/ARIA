@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/theme/aria_color_scheme.dart';
+import '../../../../shared/providers/theme_provider.dart';
 
-class DailyBriefingCard extends StatelessWidget {
+class DailyBriefingCard extends ConsumerWidget {
   final String assistantName;
   final String greeting;
   final String summary;
@@ -21,18 +23,24 @@ class DailyBriefingCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeIndex = ref.watch(themeIndexProvider);
+    final scheme = AriaColorScheme.presets[themeIndex.clamp(0, AriaColorScheme.presets.length - 1)];
+
+    final cardGradient = LinearGradient(
+      colors: [scheme.accent, scheme.accentSecondary],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    final borderColor = Colors.white.withOpacity(0.12);
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A3E), Color(0xFF0D1B3E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: cardGradient,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2E2E5E)),
+        border: Border.all(color: borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,16 +51,21 @@ class DailyBriefingCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: AppColors.accentGradient,
+                  color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withOpacity(0.4),
-                      blurRadius: 12,
-                    ),
-                  ],
+                  border: Border.all(color: Colors.white.withOpacity(0.25)),
                 ),
-                child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 22),
+                alignment: Alignment.center,
+                child: const Text(
+                  'A',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1,
+                    height: 1,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -62,7 +75,7 @@ class DailyBriefingCard extends StatelessWidget {
                       style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
                   Text(
                     'Daily Briefing',
-                    style: AppTextStyles.caption.copyWith(color: const Color(0xFFB0B8D8)),
+                    style: AppTextStyles.caption.copyWith(color: Colors.white.withOpacity(0.65)),
                   ),
                 ],
               ),
@@ -74,19 +87,16 @@ class DailyBriefingCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             summary,
-            style: AppTextStyles.bodyMedium.copyWith(color: const Color(0xFFB8C0D8)),
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.white.withOpacity(0.75)),
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              _buildStat(Icons.videocam_outlined, '$meetingsCount', 'Meetings',
-                  const Color(0xFF1E3A6E), const Color(0xFF7BA7D8), Icons.videocam_outlined),
+              _buildStat(Icons.videocam_outlined, '$meetingsCount', 'Meetings'),
               const SizedBox(width: 10),
-              _buildStat(Icons.task_alt_outlined, '$tasksCount', 'Tasks',
-                  const Color(0xFF1A5276), const Color(0xFF5DADE2), Icons.task_alt_outlined),
+              _buildStat(Icons.task_alt_outlined, '$tasksCount', 'Tasks'),
               const SizedBox(width: 10),
-              _buildStat(Icons.notifications_outlined, '$pendingCount', 'Pending',
-                  const Color(0xFF154360), const Color(0xFFAED6F1), Icons.notifications_outlined),
+              _buildStat(Icons.notifications_outlined, '$pendingCount', 'Pending'),
             ],
           ),
         ],
@@ -94,25 +104,25 @@ class DailyBriefingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(IconData icon, String value, String label, Color bgColor, Color fgColor, IconData _) {
+  Widget _buildStat(IconData icon, String value, String label) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: Colors.white.withOpacity(0.12),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: fgColor.withOpacity(0.3)),
+          border: Border.all(color: Colors.white.withOpacity(0.18)),
         ),
         child: Column(
           children: [
-            Icon(icon, color: fgColor, size: 20),
+            Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
             const SizedBox(height: 4),
             Text(
               value,
-              style: AppTextStyles.headlineMedium.copyWith(color: fgColor),
+              style: AppTextStyles.headlineMedium.copyWith(color: Colors.white),
             ),
             Text(label,
-                style: AppTextStyles.caption.copyWith(color: fgColor.withOpacity(0.8))),
+                style: AppTextStyles.caption.copyWith(color: Colors.white.withOpacity(0.7))),
           ],
         ),
       ),
