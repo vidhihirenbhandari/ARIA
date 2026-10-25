@@ -41,7 +41,7 @@ class MainNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(_navIndexProvider);
-    final location = GoRouterState.of(context).matchedLocation;
+    final location = GoRouterState.of(context).uri.path;
     final isSearch = location == '/home/search';
 
     return Scaffold(
