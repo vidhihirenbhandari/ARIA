@@ -91,68 +91,70 @@ class MainNavigation extends ConsumerWidget {
                 ),
               ),
               SizedBox(
-            height: 64,
-            child: Row(
-              children: _navItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                final isActive = currentIndex == index;
+                height: 64,
+                child: Row(
+                  children: _navItems.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+                    final isActive = currentIndex == index;
 
-                if (item.isCenter) {
-                  return Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => ref.read(_navIndexProvider.notifier).state = index,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.accentGradient,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accent.withOpacity(0.4),
-                              blurRadius: 16,
-                              spreadRadius: 2,
+                    if (item.isCenter) {
+                      return Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => ref.read(_navIndexProvider.notifier).state = index,
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.accentGradient,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accent.withOpacity(0.4),
+                                  blurRadius: 16,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Expanded(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => ref.read(_navIndexProvider.notifier).state = index,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                isActive ? item.activeIcon : item.icon,
+                                key: ValueKey(isActive),
+                                color: isActive ? AppColors.accent : AppColors.textTertiary,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: isActive ? AppColors.accent : AppColors.textTertiary,
+                                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                              ),
+                              child: Text(item.label),
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
                       ),
-                    ),
-                  );
-                }
-
-                return Expanded(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => ref.read(_navIndexProvider.notifier).state = index,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(
-                            isActive ? item.activeIcon : item.icon,
-                            key: ValueKey(isActive),
-                            color: isActive ? AppColors.accent : AppColors.textTertiary,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: isActive ? AppColors.accent : AppColors.textTertiary,
-                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                          ),
-                          child: Text(item.label),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
           ),
         ),
       ),
