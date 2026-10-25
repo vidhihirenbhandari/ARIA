@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../providers/settings_provider.dart';
+import '../../../../core/theme/aria_color_scheme.dart';
+import '../../../../shared/providers/theme_provider.dart';
 
 class AssistantNameScreen extends ConsumerStatefulWidget {
   const AssistantNameScreen({super.key});
@@ -151,53 +153,38 @@ class _AssistantNameScreenState extends ConsumerState<AssistantNameScreen> {
     final displayName = _showCustomInput && _controller.text.isNotEmpty
         ? _controller.text
         : _previewName;
+    final themeIndex = ref.watch(themeIndexProvider);
+    final scheme = AriaColorScheme.presets[themeIndex.clamp(0, AriaColorScheme.presets.length - 1)];
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A1A3E), Color(0xFF0F1728)],
+        gradient: LinearGradient(
+          colors: [scheme.accent, scheme.accentSecondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.accent.withOpacity(0.2)),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: AppColors.accentGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: AppColors.accent.withOpacity(0.4), blurRadius: 16),
-              ],
-            ),
-            child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 28),
+          Text(
+            displayName.isEmpty ? 'ARIA' : displayName,
+            style: AppTextStyles.headlineLarge.copyWith(color: Colors.white),
           ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName.isEmpty ? 'ARIA' : displayName,
-                style: AppTextStyles.headlineLarge,
-              ),
-              Text(
-                'Your AI Executive Assistant',
-                style: AppTextStyles.caption.copyWith(color: AppColors.accent),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '"Good morning! Here\'s your day..."',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
+          Text(
+            'Your AI Executive Assistant',
+            style: AppTextStyles.caption.copyWith(color: Colors.white.withOpacity(0.65)),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '"Good morning! Here\'s your day..."',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Colors.white.withOpacity(0.75),
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
