@@ -62,7 +62,7 @@ class DailyBriefingCard extends StatelessWidget {
                       style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
                   Text(
                     'Daily Briefing',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.accent),
+                    style: AppTextStyles.caption.copyWith(color: const Color(0xFFB0B8D8)),
                   ),
                 ],
               ),
@@ -79,11 +79,14 @@ class DailyBriefingCard extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              _buildStat(Icons.videocam_outlined, '$meetingsCount', 'Meetings', AppColors.accent),
-              const SizedBox(width: 12),
-              _buildStat(Icons.task_alt_outlined, '$tasksCount', 'Tasks', AppColors.secondary),
-              const SizedBox(width: 12),
-              _buildStat(Icons.notifications_outlined, '$pendingCount', 'Pending', AppColors.warning),
+              _buildStat(Icons.videocam_outlined, '$meetingsCount', 'Meetings',
+                  const Color(0xFF1E3A6E), const Color(0xFF7BA7D8), Icons.videocam_outlined),
+              const SizedBox(width: 10),
+              _buildStat(Icons.task_alt_outlined, '$tasksCount', 'Tasks',
+                  const Color(0xFF1A5276), const Color(0xFF5DADE2), Icons.task_alt_outlined),
+              const SizedBox(width: 10),
+              _buildStat(Icons.notifications_outlined, '$pendingCount', 'Pending',
+                  const Color(0xFF154360), const Color(0xFFAED6F1), Icons.notifications_outlined),
             ],
           ),
         ],
@@ -91,25 +94,25 @@ class DailyBriefingCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(IconData icon, String value, String label, Color color) {
+  Widget _buildStat(IconData icon, String value, String label, Color bgColor, Color fgColor, IconData _) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: bgColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: fgColor.withOpacity(0.3)),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 20),
+            Icon(icon, color: fgColor, size: 20),
             const SizedBox(height: 4),
             Text(
               value,
-              style: AppTextStyles.headlineMedium.copyWith(color: color),
+              style: AppTextStyles.headlineMedium.copyWith(color: fgColor),
             ),
             Text(label,
-                style: AppTextStyles.caption.copyWith(color: Colors.white70)),
+                style: AppTextStyles.caption.copyWith(color: fgColor.withOpacity(0.8))),
           ],
         ),
       ),
