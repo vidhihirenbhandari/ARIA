@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/subscription.dart';
 import '../../../../shared/providers/subscriptions_provider.dart';
+
+const _kTrialOrange = Color(0xFFE67E22);
+const _kTrialBg = Color(0xFFFFF3CD);
+const _kTrialBorder = Color(0xFFFFB800);
 
 class RenewalsScreen extends ConsumerStatefulWidget {
   const RenewalsScreen({super.key});
@@ -16,17 +21,20 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
   @override
   Widget build(BuildContext context) {
     final subs = ref.watch(subscriptionsProvider);
-    final sorted = [...subs]..sort((a, b) {
-        final aDays = a.isOverdue ? a.daysUntilRenewal : a.daysUntilRenewal;
-        final bDays = b.isOverdue ? b.daysUntilRenewal : b.daysUntilRenewal;
-        return aDays.compareTo(bDays);
-      });
+    final sorted = [...subs]..sort((a, b) =>
+        a.daysUntilRenewal.compareTo(b.daysUntilRenewal));
 
-    final overdue = sorted.where((s) => s.isActive && s.isOverdue).toList();
-    final alertSoon =
-        sorted.where((s) => s.isActive && !s.isOverdue && s.isAlertSoon).toList();
-    final upcoming =
-        sorted.where((s) => s.isActive && !s.isOverdue && !s.isAlertSoon).toList();
+    final trialsSoon = sorted
+        .where((s) => s.isActive && s.isTrialEndingSoon)
+        .toList();
+    final overdue =
+        sorted.where((s) => s.isActive && s.isOverdue).toList();
+    final alertSoon = sorted
+        .where((s) => s.isActive && !s.isOverdue && s.isAlertSoon)
+        .toList();
+    final upcoming = sorted
+        .where((s) => s.isActive && !s.isOverdue && !s.isAlertSoon)
+        .toList();
     final inactive = sorted.where((s) => !s.isActive).toList();
 
     return Scaffold(
@@ -35,21 +43,27 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
         slivers: [
           _buildAppBar(context),
           SliverToBoxAdapter(child: _buildSummaryBanner(subs)),
+          // ── Trial billing alert ──────────────────────────────────────
+          if (trialsSoon.isNotEmpty)
+            SliverToBoxAdapter(
+              child: _buildTrialAlertBanner(trialsSoon),
+            ),
+          // ── Sections ─────────────────────────────────────────────────
           if (overdue.isNotEmpty) ...[
             _sectionHeader('Expired — Renew Now', AppColors.error),
-            ...overdue.map((s) => _subTile(s)),
+            ...overdue.map(_subTile),
           ],
           if (alertSoon.isNotEmpty) ...[
             _sectionHeader('Renewing Soon', AppColors.warning),
-            ...alertSoon.map((s) => _subTile(s)),
+            ...alertSoon.map(_subTile),
           ],
           if (upcoming.isNotEmpty) ...[
             _sectionHeader('Upcoming', AppColors.textSecondary),
-            ...upcoming.map((s) => _subTile(s)),
+            ...upcoming.map(_subTile),
           ],
           if (inactive.isNotEmpty) ...[
             _sectionHeader('Inactive', AppColors.textTertiary),
-            ...inactive.map((s) => _subTile(s)),
+            ...inactive.map(_subTile),
           ],
           if (subs.isEmpty)
             SliverFillRemaining(
@@ -82,6 +96,80 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
     );
   }
 
+  Widget _buildTrialAlertBanner(List<Subscription> trials) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _kTrialBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kTrialBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: _kTrialOrange, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Trials billing soon',
+                style: AppTextStyles.labelLarge
+                    .copyWith(color: _kTrialOrange),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...trials.map((sub) {
+            final endDate = sub.trialEndDate!;
+            final dateStr =
+                DateFormat('d MMM').format(endDate);
+            final days = sub.daysUntilTrialEnd ?? 0;
+            final whenStr =
+                days == 0 ? 'today' : days == 1 ? 'tomorrow' : 'in $days days';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(sub.name,
+                            style: AppTextStyles.labelMedium
+                                .copyWith(color: const Color(0xFF7D4E00))),
+                        Text('Bills $whenStr ($dateStr)',
+                            style: AppTextStyles.caption
+                                .copyWith(color: _kTrialOrange)),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => ref
+                        .read(subscriptionsProvider.notifier)
+                        .toggleActive(sub.id),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _kTrialOrange,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text('Cancel trial',
+                          style: AppTextStyles.labelSmall
+                              .copyWith(color: Colors.white, fontSize: 11)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAppBar(BuildContext context) {
     return SliverAppBar(
       backgroundColor: AppColors.background,
@@ -102,7 +190,9 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
   Widget _buildSummaryBanner(List<Subscription> subs) {
     final active = subs.where((s) => s.isActive).toList();
     final overdue = active.where((s) => s.isOverdue).length;
-    final alertSoon = active.where((s) => !s.isOverdue && s.isAlertSoon).length;
+    final alertSoon =
+        active.where((s) => !s.isOverdue && s.isAlertSoon).length;
+    final trials = active.where((s) => s.isTrial).length;
 
     Color bannerColor;
     String bannerText;
@@ -118,6 +208,10 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
       bannerText =
           '$alertSoon renewal${alertSoon > 1 ? 's' : ''} coming up soon';
       bannerIcon = Icons.notifications_active_outlined;
+    } else if (trials > 0) {
+      bannerColor = _kTrialOrange;
+      bannerText = '$trials free trial${trials > 1 ? 's' : ''} active';
+      bannerIcon = Icons.timer_outlined;
     } else {
       bannerColor = AppColors.success;
       bannerText = 'All ${active.length} subscriptions are up to date';
@@ -152,8 +246,8 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         child: Text(
           title,
-          style: AppTextStyles.labelMedium.copyWith(
-              color: color, letterSpacing: 0.6),
+          style: AppTextStyles.labelMedium
+              .copyWith(color: color, letterSpacing: 0.6),
         ),
       ),
     );
@@ -190,8 +284,8 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
               ref.read(subscriptionsProvider.notifier).delete(sub.id);
               Navigator.pop(context);
             },
-            child:
-                Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: Text('Delete',
+                style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -204,7 +298,8 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
       isScrollControlled: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _AddEditSheet(
         existing: existing,
         onSave: (sub) {
@@ -218,6 +313,8 @@ class _RenewalsScreenState extends ConsumerState<RenewalsScreen> {
     );
   }
 }
+
+// ── Tile ──────────────────────────────────────────────────────────────────────
 
 class _SubscriptionTile extends StatelessWidget {
   final Subscription subscription;
@@ -273,7 +370,10 @@ class _SubscriptionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
             color: subscription.isActive
-                ? _badgeColor.withOpacity(subscription.isAlertSoon || subscription.isOverdue ? 0.3 : 0.12)
+                ? _badgeColor.withOpacity(
+                    subscription.isAlertSoon || subscription.isOverdue
+                        ? 0.3
+                        : 0.12)
                 : AppColors.border),
       ),
       child: InkWell(
@@ -308,7 +408,24 @@ class _SubscriptionTile extends StatelessWidget {
                                     : AppColors.textTertiary),
                           ),
                         ),
-                        if (subscription.isAutoManaged)
+                        if (subscription.isTrial) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _kTrialOrange.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                  color: _kTrialOrange.withOpacity(0.4)),
+                            ),
+                            child: Text('TRIAL',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                    color: _kTrialOrange, fontSize: 9)),
+                          ),
+                        ],
+                        if (subscription.isAutoManaged) ...[
+                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
@@ -318,8 +435,11 @@ class _SubscriptionTile extends StatelessWidget {
                             ),
                             child: Text('AUTO',
                                 style: AppTextStyles.labelSmall
-                                    .copyWith(color: AppColors.accent, fontSize: 9)),
+                                    .copyWith(
+                                        color: AppColors.accent,
+                                        fontSize: 9)),
                           ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 2),
@@ -337,7 +457,9 @@ class _SubscriptionTile extends StatelessWidget {
                         ],
                         Expanded(
                           child: Text(
-                            _badgeLabel,
+                            subscription.isTrial
+                                ? 'Trial ends $_badgeLabel'
+                                : _badgeLabel,
                             style: AppTextStyles.bodySmall
                                 .copyWith(color: _badgeColor),
                           ),
@@ -366,7 +488,9 @@ class _SubscriptionTile extends StatelessWidget {
                     PopupMenuItem(
                         value: 'toggle',
                         child: Text(
-                            subscription.isActive ? 'Deactivate' : 'Activate',
+                            subscription.isActive
+                                ? 'Deactivate'
+                                : 'Activate',
                             style: AppTextStyles.bodySmall
                                 .copyWith(color: AppColors.textPrimary))),
                     PopupMenuItem(
@@ -384,6 +508,8 @@ class _SubscriptionTile extends StatelessWidget {
     );
   }
 }
+
+// ── Add / Edit sheet ──────────────────────────────────────────────────────────
 
 class _AddEditSheet extends StatefulWidget {
   final Subscription? existing;
@@ -403,6 +529,8 @@ class _AddEditSheetState extends State<_AddEditSheet> {
   String _category = 'other';
   int _alertDays = 2;
   DateTime _renewalDate = DateTime.now().add(const Duration(days: 30));
+  bool _isTrial = false;
+  DateTime? _trialEndDate;
 
   @override
   void initState() {
@@ -416,6 +544,8 @@ class _AddEditSheetState extends State<_AddEditSheet> {
       _category = e.category;
       _alertDays = e.alertDaysBefore;
       _renewalDate = e.renewalDate;
+      _isTrial = e.isTrial;
+      _trialEndDate = e.trialEndDate;
     }
   }
 
@@ -453,10 +583,105 @@ class _AddEditSheetState extends State<_AddEditSheet> {
             Text(isEdit ? 'Edit Subscription' : 'Add Subscription',
                 style: AppTextStyles.headlineMedium),
             const SizedBox(height: 20),
-            _field('Name', _nameCtrl, hint: 'e.g. Netflix, iCloud, Insurance'),
+            _field('Name', _nameCtrl,
+                hint: 'e.g. Netflix, iCloud, Insurance'),
             const SizedBox(height: 12),
-            _field('Amount (optional)', _amountCtrl,
-                hint: 'e.g. ₹649/mo'),
+            _field('Amount (optional)', _amountCtrl, hint: 'e.g. ₹649/mo'),
+            const SizedBox(height: 12),
+
+            // ── Free Trial toggle ──────────────────────────────────────
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: _isTrial
+                    ? _kTrialBg
+                    : AppColors.surfaceElevated,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: _isTrial ? _kTrialBorder : AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.timer_outlined,
+                      color: _isTrial ? _kTrialOrange : AppColors.textTertiary,
+                      size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Free Trial',
+                        style: AppTextStyles.labelMedium.copyWith(
+                            color: _isTrial
+                                ? _kTrialOrange
+                                : AppColors.textSecondary)),
+                  ),
+                  Switch(
+                    value: _isTrial,
+                    activeColor: _kTrialOrange,
+                    onChanged: (v) => setState(() {
+                      _isTrial = v;
+                      if (v && _trialEndDate == null) {
+                        _trialEndDate =
+                            DateTime.now().add(const Duration(days: 30));
+                      }
+                    }),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Trial end date picker (shown when trial is on) ─────────
+            if (_isTrial) ...[
+              const SizedBox(height: 8),
+              _labelText('Trial ends / billing starts'),
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate:
+                        _trialEndDate ?? DateTime.now().add(const Duration(days: 30)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2030),
+                    builder: (ctx, child) => Theme(
+                      data: Theme.of(ctx).copyWith(
+                          colorScheme: ColorScheme.light(
+                              primary: _kTrialOrange,
+                              surface: AppColors.surfaceElevated)),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _trialEndDate = picked;
+                      _renewalDate = picked;
+                    });
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                      color: _kTrialBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kTrialBorder)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_outlined,
+                          size: 16, color: _kTrialOrange),
+                      const SizedBox(width: 10),
+                      Text(
+                        _trialEndDate != null
+                            ? '${_trialEndDate!.day}/${_trialEndDate!.month}/${_trialEndDate!.year}'
+                            : 'Pick date',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: _kTrialOrange),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 12),
             _labelText('Renewal Date'),
             const SizedBox(height: 6),
@@ -478,7 +703,8 @@ class _AddEditSheetState extends State<_AddEditSheet> {
                 if (picked != null) setState(() => _renewalDate = picked);
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
                     color: AppColors.surfaceElevated,
                     borderRadius: BorderRadius.circular(12),
@@ -535,13 +761,15 @@ class _AddEditSheetState extends State<_AddEditSheet> {
               label: '$_alertDays days',
               onChanged: (v) => setState(() => _alertDays = v.round()),
             ),
-            _field('Notes (optional)', _notesCtrl, hint: 'Anything to remember'),
+            _field('Notes (optional)', _notesCtrl,
+                hint: 'Anything to remember'),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _save,
-                child: Text(isEdit ? 'Save Changes' : 'Add Subscription'),
+                child:
+                    Text(isEdit ? 'Save Changes' : 'Add Subscription'),
               ),
             ),
             const SizedBox(height: 16),
@@ -551,7 +779,8 @@ class _AddEditSheetState extends State<_AddEditSheet> {
     );
   }
 
-  Widget _field(String label, TextEditingController ctrl, {String? hint}) {
+  Widget _field(String label, TextEditingController ctrl,
+      {String? hint}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -567,7 +796,8 @@ class _AddEditSheetState extends State<_AddEditSheet> {
   }
 
   Widget _labelText(String text) => Text(text,
-      style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary));
+      style: AppTextStyles.labelMedium
+          .copyWith(color: AppColors.textSecondary));
 
   Widget _dropdown({
     required String value,
@@ -587,7 +817,8 @@ class _AddEditSheetState extends State<_AddEditSheet> {
           dropdownColor: AppColors.surfaceElevated,
           style: AppTextStyles.bodyMedium,
           items: items.entries
-              .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+              .map((e) =>
+                  DropdownMenuItem(value: e.key, child: Text(e.value)))
               .toList(),
           onChanged: onChanged,
         ),
@@ -603,15 +834,20 @@ class _AddEditSheetState extends State<_AddEditSheet> {
       id: widget.existing?.id ??
           'sub_${DateTime.now().millisecondsSinceEpoch}',
       name: name,
-      amountStr:
-          _amountCtrl.text.trim().isEmpty ? null : _amountCtrl.text.trim(),
+      amountStr: _amountCtrl.text.trim().isEmpty
+          ? null
+          : _amountCtrl.text.trim(),
       renewalDate: _renewalDate,
       frequency: _frequency,
       alertDaysBefore: _alertDays,
-      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      notes: _notesCtrl.text.trim().isEmpty
+          ? null
+          : _notesCtrl.text.trim(),
       category: _category,
       isActive: widget.existing?.isActive ?? true,
       isAutoManaged: false,
+      isTrial: _isTrial,
+      trialEndDate: _isTrial ? _trialEndDate : null,
       createdAt: widget.existing?.createdAt ?? DateTime.now(),
     );
 

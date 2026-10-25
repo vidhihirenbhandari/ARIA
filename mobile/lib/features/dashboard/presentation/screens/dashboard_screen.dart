@@ -11,6 +11,7 @@ import '../../../../shared/providers/people_provider.dart';
 import '../../../../shared/providers/subscriptions_provider.dart';
 import '../../../../shared/providers/expenses_provider.dart';
 import '../../../../shared/providers/packing_provider.dart';
+import '../../../../shared/providers/watchlist_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -245,6 +246,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       {'icon': Icons.timer_outlined, 'label': 'Focus', 'route': '/home/focus'},
       {'icon': Icons.assessment_outlined, 'label': 'Weekly Review', 'route': '/home/weekly-review'},
       {'icon': Icons.backpack_outlined, 'label': 'Pack Bag', 'route': '/home/packing'},
+      {'icon': Icons.visibility_outlined, 'label': 'Watch List', 'route': '/home/watchlist'},
     ];
 
     return Column(
@@ -331,6 +333,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final habits = ref.watch(habitsProvider);
     final packingItems = ref.watch(packingProvider);
     final activeContexts = ref.watch(activePackingContextsProvider);
+    final watchlist = ref.watch(watchlistProvider);
     final now = DateTime.now();
 
     final insights = <_InsightItem>[];

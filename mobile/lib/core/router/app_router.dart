@@ -24,6 +24,7 @@ import '../../features/focus/presentation/screens/focus_screen.dart';
 import '../../features/weekly_review/presentation/screens/weekly_review_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/packing/presentation/screens/packing_screen.dart';
+import '../../features/watchlist/presentation/screens/watchlist_screen.dart';
 import '../../main_navigation.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -155,6 +156,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'packing',
                 builder: (context, state) => const PackingScreen(),
+              ),
+              GoRoute(
+                path: 'watchlist',
+                builder: (context, state) => const WatchlistScreen(),
               ),
             ],
           ),
