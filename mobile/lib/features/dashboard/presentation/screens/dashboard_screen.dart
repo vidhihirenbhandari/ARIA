@@ -241,6 +241,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       {'icon': Icons.flight_outlined, 'label': 'Travel', 'route': '/travel'},
       {'icon': Icons.psychology_outlined, 'label': 'Memory', 'route': '/home/memory'},
       {'icon': Icons.account_balance_wallet_outlined, 'label': 'Expenses', 'route': '/home/expenses'},
+      {'icon': Icons.timer_outlined, 'label': 'Focus', 'route': '/home/focus'},
+      {'icon': Icons.assessment_outlined, 'label': 'Weekly Review', 'route': '/home/weekly-review'},
     ];
 
     return Column(

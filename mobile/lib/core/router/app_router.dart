@@ -20,6 +20,8 @@ import '../../features/settings/presentation/screens/assistant_name_screen.dart'
 import '../../features/briefing/presentation/screens/briefing_screen.dart';
 import '../../features/expenses/presentation/screens/expenses_screen.dart';
 import '../../features/habits/presentation/screens/habits_screen.dart';
+import '../../features/focus/presentation/screens/focus_screen.dart';
+import '../../features/weekly_review/presentation/screens/weekly_review_screen.dart';
 import '../../main_navigation.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -135,6 +137,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'habits',
                 builder: (context, state) => const HabitsScreen(),
+              ),
+              GoRoute(
+                path: 'focus',
+                builder: (context, state) => const FocusScreen(),
+              ),
+              GoRoute(
+                path: 'weekly-review',
+                builder: (context, state) => const WeeklyReviewScreen(),
               ),
             ],
           ),
