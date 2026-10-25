@@ -113,6 +113,61 @@ class ProactiveNotificationService {
     );
   }
 
+  // Schedule a "Leave by X:XX PM" departure alert.
+  // Call this whenever a new event is approved.
+  Future<void> scheduleDepartureAlert({
+    required String eventTitle,
+    required DateTime leaveByTime,
+    int notificationId = 400,
+  }) async {
+    if (kIsWeb || _plugin == null) return;
+
+    final now = DateTime.now();
+    if (leaveByTime.isBefore(now)) return;
+
+    final h = leaveByTime.hour > 12 ? leaveByTime.hour - 12 : leaveByTime.hour == 0 ? 12 : leaveByTime.hour;
+    final m = leaveByTime.minute.toString().padLeft(2, '0');
+    final ampm = leaveByTime.hour >= 12 ? 'PM' : 'AM';
+    final timeStr = '$h:$m $ampm';
+
+    await showInstantNotification(
+      '🚗 Leave by $timeStr',
+      'Your "$eventTitle" is coming up — time to head out.',
+    );
+  }
+
+  // Show a trial ending alert. Call when a trial ends within 24 hrs.
+  Future<void> scheduleTrialEndingAlert({
+    required String serviceName,
+    required String amount,
+    int notificationId = 500,
+  }) async {
+    if (kIsWeb || _plugin == null) return;
+
+    await _plugin!.show(
+      notificationId,
+      '⚠️ $serviceName trial ends tomorrow',
+      'Cancel before billing to avoid being charged $amount.',
+      _highDetails,
+    );
+  }
+
+  // Remind the user to complete pending habits.
+  Future<void> showHabitReminder(List<String> habitNames) async {
+    if (kIsWeb || _plugin == null) return;
+
+    final preview = habitNames.length == 1
+        ? habitNames.first
+        : '${habitNames.take(2).join(', ')}${habitNames.length > 2 ? ' +${habitNames.length - 2} more' : ''}';
+
+    await _plugin!.show(
+      600,
+      '✅ Habits pending today',
+      preview,
+      _defaultDetails,
+    );
+  }
+
   Future<void> showInstantNotification(String title, String body) async {
     if (kIsWeb || _plugin == null) return;
 

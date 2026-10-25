@@ -10,6 +10,7 @@ import '../../../../shared/services/profile_service.dart';
 import '../../../../shared/services/proactive_notification_service.dart';
 import '../providers/settings_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../shared/providers/google_auth_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -393,30 +394,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ]),
 
           // ── Integrations ───────────────────────────────────────────
-          _buildSection('Integrations', [
-            _buildNavTile(
-              context,
-              icon: Icons.event_outlined,
-              title: 'Calendar Connections',
-              subtitle: '1 connected',
-            ),
-            const Divider(
-                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
-            _buildNavTile(
-              context,
-              icon: Icons.chat_outlined,
-              title: 'Messaging Apps',
-              subtitle: '0 connected',
-            ),
-            const Divider(
-                height: 1, indent: 16, endIndent: 16, color: AppColors.border),
-            _buildNavTile(
-              context,
-              icon: Icons.task_outlined,
-              title: 'Task Managers',
-              subtitle: '0 connected',
-            ),
-          ]),
+          _buildGoogleCalendarSection(ref),
 
           // ── Data & Privacy ─────────────────────────────────────────
           _buildSection('Data & Privacy', [
@@ -733,6 +711,157 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         const SizedBox(height: 8),
       ],
+    );
+  }
+
+  Widget _buildGoogleCalendarSection(WidgetRef ref) {
+    final googleAccount = ref.watch(googleAuthProvider);
+    final isConnected = googleAccount != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
+          child: Text(
+            'INTEGRATIONS',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textTertiary,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              _buildIntegrationTile(
+                icon: Icons.calendar_month_rounded,
+                iconColor: const Color(0xFF4285F4),
+                title: 'Google Calendar',
+                subtitle: isConnected
+                    ? googleAccount.email
+                    : 'Sync your real events into ARIA',
+                statusDot: isConnected ? const Color(0xFF4CAF50) : null,
+                action: isConnected
+                    ? TextButton(
+                        onPressed: () async {
+                          await ref.read(googleAuthProvider.notifier).signOut();
+                        },
+                        child: Text(
+                          'Disconnect',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: () async {
+                          final ok = await ref.read(googleAuthProvider.notifier).signIn();
+                          if (!ok && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Could not sign in — check your Google Client ID in app_config.dart'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4285F4),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        child: const Text('Connect'),
+                      ),
+              ),
+              if (isConnected) ...[
+                const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.border),
+                ListTile(
+                  leading: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary, size: 20),
+                  title: const Text('Sync now', style: AppTextStyles.bodyMedium),
+                  subtitle: Text('Refresh today\'s events from Google', style: AppTextStyles.caption),
+                  trailing: const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textTertiary),
+                  onTap: () async {
+                    await ref.read(googleAuthProvider.notifier).refreshCalendar();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Calendar synced'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildIntegrationTile({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    Color? statusDot,
+    Widget? action,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                    if (statusDot != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(color: statusDot, shape: BoxShape.circle),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(subtitle, style: AppTextStyles.caption, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+          if (action != null) action,
+        ],
+      ),
     );
   }
 
