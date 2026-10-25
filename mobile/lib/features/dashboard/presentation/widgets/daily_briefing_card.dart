@@ -26,15 +26,18 @@ class DailyBriefingCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A3E), Color(0xFF0F1728)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.accent.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
+            color: AppColors.accent.withOpacity(0.1),
+            blurRadius: 24,
+            spreadRadius: 2,
           ),
         ],
       ),
