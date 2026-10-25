@@ -111,9 +111,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 const SizedBox(height: 60),
                 // Logo
                 Center(
-                  child: Image.asset(
-                    'assets/images/aria_logo.png',
-                    width: 160,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.accentGradient,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withOpacity(0.4),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 36),
                   ),
                 ),
                 const SizedBox(height: 32),

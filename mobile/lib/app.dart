@@ -28,7 +28,7 @@ class AriaApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
+        themeMode: ThemeMode.dark,
         routerConfig: router,
         builder: (context, child) {
           return MediaQuery(
