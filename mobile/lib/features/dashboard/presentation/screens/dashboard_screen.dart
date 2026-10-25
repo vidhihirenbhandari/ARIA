@@ -17,6 +17,7 @@ import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
 import '../widgets/upcoming_events_widget.dart';
 import '../widgets/pending_suggestions_widget.dart';
+import '../../../departure/presentation/widgets/departure_alert_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -150,6 +151,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               error: (_, __) => const SizedBox.shrink(),
             ),
           ),
+          // Smart departure alert — leave by X:XX based on next event + commute
+          SliverToBoxAdapter(child: const DepartureAlertCard()),
           // ARIA Insights — proactive intelligence
           SliverToBoxAdapter(child: _buildAriaInsights()),
           SliverToBoxAdapter(child: const SizedBox(height: 16)),
