@@ -34,6 +34,18 @@ class SubscriptionsNotifier extends StateNotifier<List<Subscription>> {
     final now = DateTime.now();
     state = [
       Subscription(
+        id: 'trial_spotify',
+        name: 'Spotify Premium',
+        amountStr: '₹119/mo',
+        renewalDate: DateTime(now.year, now.month, now.day + 1),
+        frequency: 'monthly',
+        alertDaysBefore: 1,
+        category: 'streaming',
+        isTrial: true,
+        trialEndDate: DateTime(now.year, now.month, now.day + 1),
+        createdAt: now,
+      ),
+      Subscription(
         id: 'netflix',
         name: 'Netflix',
         amountStr: '₹649/mo',

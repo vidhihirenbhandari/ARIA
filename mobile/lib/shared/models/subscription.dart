@@ -10,6 +10,8 @@ class Subscription {
   final String category; // 'app', 'streaming', 'utility', 'insurance', 'other'
   final bool isActive;
   final bool isAutoManaged; // true = sideload cert, cannot be edited
+  final bool isTrial;
+  final DateTime? trialEndDate;
   final DateTime createdAt;
 
   const Subscription({
@@ -24,12 +26,19 @@ class Subscription {
     this.category = 'other',
     this.isActive = true,
     this.isAutoManaged = false,
+    this.isTrial = false,
+    this.trialEndDate,
     required this.createdAt,
   });
 
   int get daysUntilRenewal => renewalDate.difference(DateTime.now()).inDays;
   bool get isOverdue => daysUntilRenewal < 0;
   bool get isAlertSoon => !isOverdue && daysUntilRenewal <= alertDaysBefore;
+
+  int? get daysUntilTrialEnd =>
+      trialEndDate?.difference(DateTime.now()).inDays;
+  bool get isTrialEndingSoon =>
+      isTrial && trialEndDate != null && (daysUntilTrialEnd ?? 99) <= 2;
 
   DateTime get nextRenewalDate {
     if (!isOverdue) return renewalDate;
@@ -68,6 +77,8 @@ class Subscription {
     String? category,
     bool? isActive,
     bool? isAutoManaged,
+    bool? isTrial,
+    DateTime? trialEndDate,
     DateTime? createdAt,
   }) {
     return Subscription(
@@ -82,6 +93,8 @@ class Subscription {
       category: category ?? this.category,
       isActive: isActive ?? this.isActive,
       isAutoManaged: isAutoManaged ?? this.isAutoManaged,
+      isTrial: isTrial ?? this.isTrial,
+      trialEndDate: trialEndDate ?? this.trialEndDate,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -98,6 +111,8 @@ class Subscription {
         'category': category,
         'isActive': isActive,
         'isAutoManaged': isAutoManaged,
+        'is_trial': isTrial,
+        'trial_end_date': trialEndDate?.toIso8601String(),
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -113,6 +128,10 @@ class Subscription {
         category: json['category'] as String? ?? 'other',
         isActive: json['isActive'] as bool? ?? true,
         isAutoManaged: json['isAutoManaged'] as bool? ?? false,
+        isTrial: json['is_trial'] as bool? ?? false,
+        trialEndDate: json['trial_end_date'] != null
+            ? DateTime.tryParse(json['trial_end_date'] as String)
+            : null,
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 }
