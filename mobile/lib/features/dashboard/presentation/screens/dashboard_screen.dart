@@ -10,6 +10,7 @@ import '../../../../shared/providers/habits_provider.dart';
 import '../../../../shared/providers/people_provider.dart';
 import '../../../../shared/providers/subscriptions_provider.dart';
 import '../../../../shared/providers/expenses_provider.dart';
+import '../../../../shared/providers/packing_provider.dart';
 import '../../data/briefing_repository.dart';
 import '../../../assistant/data/events_repository.dart';
 import '../widgets/daily_briefing_card.dart';
@@ -243,6 +244,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       {'icon': Icons.account_balance_wallet_outlined, 'label': 'Expenses', 'route': '/home/expenses'},
       {'icon': Icons.timer_outlined, 'label': 'Focus', 'route': '/home/focus'},
       {'icon': Icons.assessment_outlined, 'label': 'Weekly Review', 'route': '/home/weekly-review'},
+      {'icon': Icons.backpack_outlined, 'label': 'Pack Bag', 'route': '/home/packing'},
     ];
 
     return Column(
@@ -327,9 +329,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final subscriptions = ref.watch(subscriptionsProvider);
     final expensesNotifier = ref.read(expensesProvider.notifier);
     final habits = ref.watch(habitsProvider);
+    final packingItems = ref.watch(packingProvider);
+    final activeContexts = ref.watch(activePackingContextsProvider);
     final now = DateTime.now();
 
     final insights = <_InsightItem>[];
+
+    // Packing insight — show if not all visible items are packed
+    final visiblePacking = packingItems.where((i) =>
+        i.isAlwaysBring || i.context == null || activeContexts.contains(i.context)).toList();
+    final packedCount = visiblePacking.where((i) => i.checked).length;
+    if (visiblePacking.isNotEmpty && packedCount < visiblePacking.length) {
+      final remaining = visiblePacking.length - packedCount;
+      insights.add(_InsightItem(
+        icon: Icons.backpack_outlined,
+        color: const Color(0xFF0EA5E9),
+        text: '$remaining item${remaining == 1 ? '' : 's'} left to pack for today',
+        route: '/home/packing',
+      ));
+    }
 
     // Habits pending today
     final todayStr =

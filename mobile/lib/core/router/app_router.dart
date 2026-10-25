@@ -23,6 +23,7 @@ import '../../features/habits/presentation/screens/habits_screen.dart';
 import '../../features/focus/presentation/screens/focus_screen.dart';
 import '../../features/weekly_review/presentation/screens/weekly_review_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
+import '../../features/packing/presentation/screens/packing_screen.dart';
 import '../../main_navigation.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -150,6 +151,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'search',
                 builder: (context, state) => const SearchScreen(),
+              ),
+              GoRoute(
+                path: 'packing',
+                builder: (context, state) => const PackingScreen(),
               ),
             ],
           ),
