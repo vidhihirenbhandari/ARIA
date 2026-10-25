@@ -41,23 +41,56 @@ class MainNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(_navIndexProvider);
+    final location = GoRouterState.of(context).matchedLocation;
+    final isSearch = location == '/home/search';
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: IndexedStack(
-        index: currentIndex,
-        children: _screens,
-      ),
-      floatingActionButton: const _QuickCaptureFAB(),
+      body: isSearch
+          ? child
+          : IndexedStack(
+              index: currentIndex,
+              children: _screens,
+            ),
+      floatingActionButton: isSearch ? null : const _QuickCaptureFAB(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      bottomNavigationBar: Container(
+      bottomNavigationBar: isSearch
+          ? null
+          : Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
           border: const Border(top: BorderSide(color: AppColors.border, width: 1)),
         ),
         child: SafeArea(
           top: false,
-          child: SizedBox(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Persistent search bar — tapping opens the search screen
+              GestureDetector(
+                onTap: () => context.go('/home/search'),
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 12),
+                      Icon(Icons.search_rounded, color: AppColors.textTertiary, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Search commitments, people, subscriptions…',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(
             height: 64,
             child: Row(
               children: _navItems.asMap().entries.map((entry) {

@@ -22,6 +22,7 @@ import '../../features/expenses/presentation/screens/expenses_screen.dart';
 import '../../features/habits/presentation/screens/habits_screen.dart';
 import '../../features/focus/presentation/screens/focus_screen.dart';
 import '../../features/weekly_review/presentation/screens/weekly_review_screen.dart';
+import '../../features/search/presentation/screens/search_screen.dart';
 import '../../main_navigation.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -145,6 +146,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'weekly-review',
                 builder: (context, state) => const WeeklyReviewScreen(),
+              ),
+              GoRoute(
+                path: 'search',
+                builder: (context, state) => const SearchScreen(),
               ),
             ],
           ),
