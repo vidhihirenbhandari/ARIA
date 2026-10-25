@@ -147,7 +147,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     for (final t in toImport) {
       final daysAgo = (toImport.indexOf(t) + 1) * 2;
       ref.read(expensesProvider.notifier).addExpense(Expense(
-        id: 'imp_${DateTime.now().millisecondsSinceEpoch}_$i${toImport.indexOf(t)}',
+        id: 'imp_${DateTime.now().millisecondsSinceEpoch}_${toImport.indexOf(t)}',
         title: t['title'] as String,
         amount: t['amount'] as double,
         category: t['category'] as String,
