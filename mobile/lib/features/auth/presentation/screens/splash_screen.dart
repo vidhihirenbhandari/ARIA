@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -94,43 +93,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Logo
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: AppColors.accentGradient,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accent.withOpacity(
-                                _glowAnimation.value * 0.5,
-                              ),
-                              blurRadius: 40 * _glowAnimation.value,
-                              spreadRadius: 10 * _glowAnimation.value,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.auto_awesome_rounded,
-                          color: Colors.white,
-                          size: 48,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Text(
-                        'ARIA',
-                        style: AppTextStyles.displayLarge.copyWith(
-                          letterSpacing: 8,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Adaptive Real-time Intelligence',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                          letterSpacing: 1,
-                        ),
+                      Image.asset(
+                        'assets/images/aria_logo.png',
+                        width: 200,
                       ),
                       const SizedBox(height: 80),
                       SizedBox(

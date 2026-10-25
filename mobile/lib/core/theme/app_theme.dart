@@ -10,17 +10,17 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.background,
       // Outfit applied globally — all Text widgets inherit this font
       fontFamily: GoogleFonts.outfit().fontFamily,
-      colorScheme: ColorScheme.dark(
+      colorScheme: ColorScheme.light(
         primary: AppColors.accent,
         secondary: AppColors.secondary,
         surface: AppColors.surface,
         error: AppColors.error,
-        onPrimary: const Color(0xFF0D0D15),
-        onSecondary: const Color(0xFF0D0D15),
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
         onSurface: AppColors.textPrimary,
         onError: Colors.white,
         outline: AppColors.border,
@@ -48,7 +48,7 @@ class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: Brightness.dark,
         ),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -69,7 +69,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.accent,
-          foregroundColor: const Color(0xFF0D0D15),
+          foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
