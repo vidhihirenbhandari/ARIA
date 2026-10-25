@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/expense.dart';
 import '../../../../shared/providers/expenses_provider.dart';
+import '../../../../shared/services/local_storage.dart';
 
 // Category colours
 const _categoryColors = {
@@ -28,6 +29,50 @@ const _categoryIcons = {
   'other': Icons.category_outlined,
 };
 
+// Payment app definitions
+const _paymentApps = [
+  _PaymentAppDef(
+    key: 'googlepay',
+    name: 'Google Pay',
+    icon: Icons.account_balance_wallet_rounded,
+    color: Color(0xFF4285F4),
+  ),
+  _PaymentAppDef(
+    key: 'phonepe',
+    name: 'PhonePe',
+    icon: Icons.phone_android_rounded,
+    color: Color(0xFF5F259F),
+  ),
+  _PaymentAppDef(
+    key: 'paytm',
+    name: 'Paytm',
+    icon: Icons.payment_rounded,
+    color: Color(0xFF00BAF2),
+  ),
+];
+
+// Sample transactions to import
+final _sampleTransactions = [
+  {'title': 'Swiggy', 'amount': 349.0, 'category': 'food'},
+  {'title': 'Uber', 'amount': 185.0, 'category': 'transport'},
+  {'title': 'Zepto', 'amount': 512.0, 'category': 'food'},
+  {'title': 'BookMyShow', 'amount': 650.0, 'category': 'entertainment'},
+  {'title': 'Zomato', 'amount': 298.0, 'category': 'food'},
+  {'title': 'Rapido', 'amount': 55.0, 'category': 'transport'},
+  {'title': 'BigBasket', 'amount': 1240.0, 'category': 'food'},
+  {'title': 'Myntra', 'amount': 899.0, 'category': 'shopping'},
+  {'title': 'Nykaa', 'amount': 450.0, 'category': 'shopping'},
+  {'title': 'Netflix', 'amount': 649.0, 'category': 'entertainment'},
+];
+
+class _PaymentAppDef {
+  final String key;
+  final String name;
+  final IconData icon;
+  final Color color;
+  const _PaymentAppDef({required this.key, required this.name, required this.icon, required this.color});
+}
+
 class ExpensesScreen extends ConsumerStatefulWidget {
   const ExpensesScreen({super.key});
 
@@ -38,6 +83,36 @@ class ExpensesScreen extends ConsumerStatefulWidget {
 class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   String _activeFilter = 'All';
   String? _activeCategory;
+  Map<String, bool> _connectedApps = {
+    'googlepay': false,
+    'phonepe': false,
+    'paytm': false,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConnectedApps();
+  }
+
+  void _loadConnectedApps() {
+    final storage = ref.read(localStorageProvider);
+    final raw = storage.get('payment_apps');
+    if (raw is Map) {
+      setState(() {
+        _connectedApps = {
+          'googlepay': raw['googlepay'] as bool? ?? false,
+          'phonepe': raw['phonepe'] as bool? ?? false,
+          'paytm': raw['paytm'] as bool? ?? false,
+        };
+      });
+    }
+  }
+
+  Future<void> _saveConnectedApps() async {
+    final storage = ref.read(localStorageProvider);
+    await storage.put('payment_apps', _connectedApps);
+  }
 
   List<String> get _filterChips => ['All', 'This Week', 'This Month'];
 
@@ -63,6 +138,89 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     return filtered;
   }
 
+  void _importTransactions(String appKey) {
+    final now = DateTime.now();
+    // Pick 3 random-ish transactions based on appKey hash
+    final startIdx = appKey.hashCode.abs() % _sampleTransactions.length;
+    final toImport = List.generate(3, (i) => _sampleTransactions[(startIdx + i) % _sampleTransactions.length]);
+
+    for (final t in toImport) {
+      final daysAgo = (toImport.indexOf(t) + 1) * 2;
+      ref.read(expensesProvider.notifier).addExpense(Expense(
+        id: 'imp_${DateTime.now().millisecondsSinceEpoch}_$i${toImport.indexOf(t)}',
+        title: t['title'] as String,
+        amount: t['amount'] as double,
+        category: t['category'] as String,
+        date: now.subtract(Duration(days: daysAgo)),
+        note: 'Imported from ${_paymentApps.firstWhere((a) => a.key == appKey).name}',
+        createdAt: now,
+      ));
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('3 transactions imported'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showConnectSheet(_PaymentAppDef app) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: app.color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(app.icon, color: app.color, size: 28),
+            ),
+            const SizedBox(height: 16),
+            Text('Connect ${app.name}', style: AppTextStyles.headlineMedium),
+            const SizedBox(height: 8),
+            Text(
+              'ARIA will read your transaction history to auto-log expenses. This is a demo — no real data is accessed.',
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: app.color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  setState(() => _connectedApps[app.key] = true);
+                  _saveConnectedApps();
+                  _importTransactions(app.key);
+                },
+                child: Text('Connect', style: AppTextStyles.button.copyWith(color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final expenses = ref.watch(expensesProvider);
@@ -80,6 +238,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       ),
       body: CustomScrollView(
         slivers: [
+          // Connected accounts section
+          SliverToBoxAdapter(child: _buildConnectedAccounts()),
           // Summary card
           SliverToBoxAdapter(child: _buildSummaryCard(notifier, rupeeFmt)),
           // Filter chips
@@ -101,8 +261,112 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.accent,
+        tooltip: 'Add manually',
         onPressed: () => _showAddExpenseSheet(context, ref),
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildConnectedAccounts() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+          child: Text(
+            'Connected Accounts',
+            style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            itemCount: _paymentApps.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final app = _paymentApps[index];
+              final isConnected = _connectedApps[app.key] ?? false;
+              return _buildPaymentAppCard(app, isConnected);
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildPaymentAppCard(_PaymentAppDef app, bool isConnected) {
+    return GestureDetector(
+      onTap: isConnected ? () => _importTransactions(app.key) : () => _showConnectSheet(app),
+      child: Container(
+        width: 130,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isConnected ? app.color.withOpacity(0.4) : AppColors.border,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Icon(app.icon, color: app.color, size: 20),
+                const Spacer(),
+                if (isConnected)
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              app.name,
+              style: AppTextStyles.labelMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (isConnected)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: app.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Import',
+                  style: AppTextStyles.caption.copyWith(
+                    color: app.color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  'Connect',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -121,7 +385,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     final top3 = topCategories.take(3).toList();
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.accent,
@@ -361,8 +625,9 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Tap + to record your first expense',
+            'Connect a payment app or tap + to add manually',
             style: AppTextStyles.bodySmall,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
