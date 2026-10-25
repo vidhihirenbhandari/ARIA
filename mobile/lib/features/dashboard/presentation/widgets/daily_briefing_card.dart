@@ -26,17 +26,13 @@ class DailyBriefingCard extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1A3E), Color(0xFF0D1B3E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF2E2E5E)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +58,8 @@ class DailyBriefingCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(assistantName, style: AppTextStyles.headlineSmall),
+                  Text(assistantName,
+                      style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
                   Text(
                     'Daily Briefing',
                     style: AppTextStyles.caption.copyWith(color: AppColors.accent),
@@ -72,11 +69,12 @@ class DailyBriefingCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(greeting, style: AppTextStyles.headlineMedium),
+          Text(greeting,
+              style: AppTextStyles.headlineMedium.copyWith(color: Colors.white)),
           const SizedBox(height: 8),
           Text(
             summary,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodyMedium.copyWith(color: const Color(0xFFB8C0D8)),
           ),
           const SizedBox(height: 20),
           Row(
@@ -110,7 +108,8 @@ class DailyBriefingCard extends StatelessWidget {
               value,
               style: AppTextStyles.headlineMedium.copyWith(color: color),
             ),
-            Text(label, style: AppTextStyles.caption),
+            Text(label,
+                style: AppTextStyles.caption.copyWith(color: Colors.white70)),
           ],
         ),
       ),
