@@ -6,6 +6,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../shared/models/aria_event.dart';
 import '../../../../shared/providers/calendar_events_provider.dart';
 import '../../../../shared/providers/commitments_provider.dart';
+import '../../../../shared/providers/habits_provider.dart';
 import '../../../../shared/providers/people_provider.dart';
 import '../../../../shared/providers/subscriptions_provider.dart';
 import '../../../../shared/providers/expenses_provider.dart';
@@ -235,6 +236,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       {'icon': Icons.wb_sunny_outlined, 'label': 'Morning Brief', 'route': '/home/briefing'},
       {'icon': Icons.add_outlined, 'label': 'Add Event', 'route': '/home/calendar'},
       {'icon': Icons.task_outlined, 'label': 'New Task', 'route': '/home/tasks'},
+      {'icon': Icons.self_improvement_outlined, 'label': 'Habits', 'route': '/home/habits'},
       {'icon': Icons.subscriptions_outlined, 'label': 'Renewals', 'route': '/home/renewals'},
       {'icon': Icons.flight_outlined, 'label': 'Travel', 'route': '/travel'},
       {'icon': Icons.psychology_outlined, 'label': 'Memory', 'route': '/home/memory'},
@@ -322,9 +324,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final people = ref.watch(peopleProvider);
     final subscriptions = ref.watch(subscriptionsProvider);
     final expensesNotifier = ref.read(expensesProvider.notifier);
+    final habits = ref.watch(habitsProvider);
     final now = DateTime.now();
 
     final insights = <_InsightItem>[];
+
+    // Habits pending today
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final pendingHabits =
+        habits.where((h) => !h.completedDates.contains(todayStr)).length;
+    if (pendingHabits > 0) {
+      insights.add(_InsightItem(
+        icon: Icons.self_improvement_outlined,
+        color: const Color(0xFF8B5CF6),
+        text: '$pendingHabits habit${pendingHabits == 1 ? '' : 's'} pending today — keep your streak going!',
+        route: '/home/habits',
+      ));
+    }
 
     // Subscription / renewal alerts
     for (final s in subscriptions) {
