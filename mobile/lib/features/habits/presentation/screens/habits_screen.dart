@@ -358,12 +358,14 @@ class _AddHabitSheetState extends State<_AddHabitSheet> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _emojiCtrl.dispose();
     super.dispose();
   }
 
   void _save() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
+    final emoji = _emojiCtrl.text.trim().isEmpty ? '✅' : _emojiCtrl.text.trim();
 
     final rand = Random();
     final ts = DateTime.now().millisecondsSinceEpoch;
@@ -372,7 +374,7 @@ class _AddHabitSheetState extends State<_AddHabitSheet> {
     final habit = Habit(
       id: id,
       name: name,
-      emoji: _selectedEmoji,
+      emoji: emoji,
       frequency: _selectedFrequency,
       targetCount: 1,
       completedDates: [],
@@ -409,50 +411,54 @@ class _AddHabitSheetState extends State<_AddHabitSheet> {
           const Text('New Habit', style: AppTextStyles.headlineMedium),
           const SizedBox(height: 16),
 
-          // Name field
-          TextField(
-            controller: _nameCtrl,
-            autofocus: true,
-            style: AppTextStyles.bodyMedium,
-            decoration: InputDecoration(
-              hintText: 'Habit name',
-              hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
-              filled: true,
-              fillColor: AppColors.surfaceElevated,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Emoji picker
-          Text('Emoji', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _emojis.map((e) {
-              final selected = e == _selectedEmoji;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedEmoji = e),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.accent.withOpacity(0.12) : AppColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: selected ? AppColors.accent : Colors.transparent,
-                      width: 1.5,
+          // Name + Emoji row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Emoji input
+              SizedBox(
+                width: 64,
+                child: TextField(
+                  controller: _emojiCtrl,
+                  autofocus: false,
+                  maxLength: 2,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 24),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '✅',
+                    hintStyle: const TextStyle(fontSize: 24),
+                    filled: true,
+                    fillColor: AppColors.surfaceElevated,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   ),
-                  child: Center(child: Text(e, style: const TextStyle(fontSize: 22))),
                 ),
-              );
-            }).toList(),
+              ),
+              const SizedBox(width: 10),
+              // Name field
+              Expanded(
+                child: TextField(
+                  controller: _nameCtrl,
+                  autofocus: true,
+                  style: AppTextStyles.bodyMedium,
+                  decoration: InputDecoration(
+                    hintText: 'Habit name',
+                    hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
+                    filled: true,
+                    fillColor: AppColors.surfaceElevated,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -465,18 +471,18 @@ class _AddHabitSheetState extends State<_AddHabitSheet> {
               return GestureDetector(
                 onTap: () => setState(() => _selectedColor = c),
                 child: Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  width: 32,
-                  height: 32,
+                  margin: const EdgeInsets.only(right: 8),
+                  width: 30,
+                  height: 30,
                   decoration: BoxDecoration(
                     color: Color(c),
                     shape: BoxShape.circle,
                     border: selected
-                        ? Border.all(color: AppColors.accent, width: 2.5)
+                        ? Border.all(color: AppColors.textPrimary, width: 2.5)
                         : null,
                   ),
                   child: selected
-                      ? const Icon(Icons.check, color: Colors.white, size: 16)
+                      ? const Icon(Icons.check, color: Colors.white, size: 15)
                       : null,
                 ),
               );
@@ -484,34 +490,33 @@ class _AddHabitSheetState extends State<_AddHabitSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Frequency dropdown
+          // Frequency chips
           Text('Frequency', style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            value: _selectedFrequency,
-            dropdownColor: AppColors.surface,
-            style: AppTextStyles.bodyMedium,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: AppColors.surfaceElevated,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
-            items: _frequencies
-                .map((f) => DropdownMenuItem(
-                      value: f,
-                      child: Text(
-                        f[0].toUpperCase() + f.substring(1),
-                        style: AppTextStyles.bodyMedium,
-                      ),
-                    ))
-                .toList(),
-            onChanged: (v) {
-              if (v != null) setState(() => _selectedFrequency = v);
-            },
+          Row(
+            children: ['daily', 'weekly'].map((f) {
+              final selected = _selectedFrequency == f;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedFrequency = f),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected ? AppColors.accent : AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: selected ? AppColors.accent : AppColors.border,
+                    ),
+                  ),
+                  child: Text(
+                    f[0].toUpperCase() + f.substring(1),
+                    style: AppTextStyles.labelMedium.copyWith(
+                      color: selected ? Colors.white : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 20),
 
