@@ -35,36 +35,160 @@ class DemoData {
         ),
       ];
 
-  static List<Event> get calendarEvents => [
-        Event(
-          id: 'cal-1',
-          userId: 'demo-user',
-          title: 'Team Standup',
-          startTime: DateTime.now().copyWith(hour: 10, minute: 0),
-          endTime: DateTime.now().copyWith(hour: 10, minute: 30),
-          source: 'google_calendar',
-          status: 'approved',
-        ),
-        Event(
-          id: 'cal-2',
-          userId: 'demo-user',
-          title: 'Client Call — Raj Sharma',
-          startTime: DateTime.now().copyWith(hour: 14, minute: 0),
-          endTime: DateTime.now().copyWith(hour: 15, minute: 0),
-          location: 'Google Meet',
-          source: 'google_calendar',
-          status: 'approved',
-        ),
-        Event(
-          id: 'cal-3',
-          userId: 'demo-user',
-          title: 'Product Review',
-          startTime: DateTime.now().copyWith(hour: 16, minute: 30),
-          endTime: DateTime.now().copyWith(hour: 17, minute: 30),
-          source: 'google_calendar',
-          status: 'approved',
-        ),
-      ];
+  static List<Event> get calendarEvents {
+    final now = DateTime.now();
+    DateTime d(int offset, int h, int m) =>
+        DateTime(now.year, now.month, now.day + offset, h, m);
+    return [
+      // Today
+      Event(
+        id: 'cal-1',
+        userId: 'demo-user',
+        title: 'Team Standup',
+        startTime: d(0, 10, 0),
+        endTime: d(0, 10, 30),
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      Event(
+        id: 'cal-2',
+        userId: 'demo-user',
+        title: 'Client Call — Raj Sharma',
+        startTime: d(0, 14, 0),
+        endTime: d(0, 15, 0),
+        location: 'Google Meet',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      Event(
+        id: 'cal-3',
+        userId: 'demo-user',
+        title: 'Product Review',
+        startTime: d(0, 16, 30),
+        endTime: d(0, 17, 30),
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      // Tomorrow
+      Event(
+        id: 'cal-4',
+        userId: 'demo-user',
+        title: 'IndiGo Flight 6E-204 — DEL → BOM',
+        startTime: d(1, 7, 0),
+        endTime: d(1, 9, 15),
+        location: 'Delhi Airport, T2',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      Event(
+        id: 'cal-5',
+        userId: 'demo-user',
+        title: 'Mumbai Office Check-in',
+        startTime: d(1, 11, 0),
+        endTime: d(1, 12, 0),
+        location: 'BKC, Mumbai',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      // Day +2
+      Event(
+        id: 'cal-6',
+        userId: 'demo-user',
+        title: 'Investor Pitch Prep',
+        startTime: d(2, 9, 0),
+        endTime: d(2, 11, 0),
+        description: 'Finalize deck and run through Q&A',
+        source: 'manual',
+        status: 'approved',
+      ),
+      Event(
+        id: 'cal-7',
+        userId: 'demo-user',
+        title: 'Lunch — Ananya',
+        startTime: d(2, 13, 0),
+        endTime: d(2, 14, 0),
+        location: 'Trident, Nariman Point',
+        source: 'manual',
+        status: 'approved',
+      ),
+      // Day +4
+      Event(
+        id: 'cal-8',
+        userId: 'demo-user',
+        title: 'Q4 Planning Workshop',
+        startTime: d(4, 10, 0),
+        endTime: d(4, 17, 0),
+        location: 'Conference Room B',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      // Day +5
+      Event(
+        id: 'cal-9',
+        userId: 'demo-user',
+        title: 'Weekly 1:1 — Priya',
+        startTime: d(5, 11, 0),
+        endTime: d(5, 11, 30),
+        location: 'Google Meet',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      Event(
+        id: 'cal-10',
+        userId: 'demo-user',
+        title: 'Dentist Appointment',
+        startTime: d(5, 18, 0),
+        endTime: d(5, 19, 0),
+        location: 'Fortis Dental, Bandra',
+        source: 'manual',
+        status: 'approved',
+      ),
+      // Day +7
+      Event(
+        id: 'cal-11',
+        userId: 'demo-user',
+        title: 'Sprint Retrospective',
+        startTime: d(7, 15, 0),
+        endTime: d(7, 16, 0),
+        location: 'Zoom',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      // Day +10
+      Event(
+        id: 'cal-12',
+        userId: 'demo-user',
+        title: 'Board Presentation',
+        startTime: d(10, 14, 0),
+        endTime: d(10, 16, 0),
+        location: 'HQ Boardroom',
+        description: 'Q3 results + Q4 roadmap',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      // Day +12
+      Event(
+        id: 'cal-13',
+        userId: 'demo-user',
+        title: 'Team Offsite — Day 1',
+        startTime: d(12, 9, 0),
+        endTime: d(12, 18, 0),
+        location: 'Lonavala',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+      Event(
+        id: 'cal-14',
+        userId: 'demo-user',
+        title: 'Team Offsite — Day 2',
+        startTime: d(13, 9, 0),
+        endTime: d(13, 17, 0),
+        location: 'Lonavala',
+        source: 'google_calendar',
+        status: 'approved',
+      ),
+    ];
+  }
 
   static List<TravelBooking> get travelBookings => [
         TravelBooking(
