@@ -1,0 +1,42 @@
+name: Deploy Web Demo
+
+on:
+  push:
+    branches: [claude/funny-babbage-xjn13o, main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.4'
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Build web
+        working-directory: mobile
+        run: flutter build web --release --base-href /ARIA/
+
+      - name: Add SPA redirect for GitHub Pages
+        run: |
+          cp mobile/build/web/index.html mobile/build/web/404.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: mobile/build/web
+          force_orphan: true
+          commit_message: "Deploy web demo [skip ci]"

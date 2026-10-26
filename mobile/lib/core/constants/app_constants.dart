@@ -16,6 +16,7 @@ class AppConstants {
   static const String settingsKey = 'app_settings';
   static const String assistantNameKey = 'assistant_name';
   static const String themeKey = 'app_theme';
+  static const String themeIndexKey = 'theme_index';
 
   // Assistant
   static const List<String> defaultAssistantNames = ['ARIA', 'Nova', 'Atlas'];
