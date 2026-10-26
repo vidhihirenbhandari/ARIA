@@ -19,6 +19,17 @@ import '../widgets/daily_briefing_card.dart';
 import '../widgets/upcoming_events_widget.dart';
 import '../widgets/pending_suggestions_widget.dart';
 import '../../../departure/presentation/widgets/departure_alert_card.dart';
+import '../../../briefing/presentation/screens/briefing_screen.dart';
+import '../../../calendar/presentation/screens/calendar_screen.dart';
+import '../../../tasks/presentation/screens/tasks_screen.dart';
+import '../../../habits/presentation/screens/habits_screen.dart';
+import '../../../renewals/presentation/screens/renewals_screen.dart';
+import '../../../memory/presentation/screens/memory_screen.dart';
+import '../../../expenses/presentation/screens/expenses_screen.dart';
+import '../../../focus/presentation/screens/focus_screen.dart';
+import '../../../weekly_review/presentation/screens/weekly_review_screen.dart';
+import '../../../packing/presentation/screens/packing_screen.dart';
+import '../../../watchlist/presentation/screens/watchlist_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -222,18 +233,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildQuickActions() {
     final actions = [
-      {'icon': Icons.wb_sunny_outlined, 'label': 'Morning Brief', 'route': '/home/briefing'},
-      {'icon': Icons.add_outlined, 'label': 'Add Event', 'route': '/home/calendar'},
-      {'icon': Icons.task_outlined, 'label': 'New Task', 'route': '/home/tasks'},
-      {'icon': Icons.self_improvement_outlined, 'label': 'Habits', 'route': '/home/habits'},
-      {'icon': Icons.subscriptions_outlined, 'label': 'Renewals', 'route': '/home/renewals'},
-      {'icon': Icons.flight_outlined, 'label': 'Travel', 'route': '/travel'},
-      {'icon': Icons.psychology_outlined, 'label': 'Memory', 'route': '/home/memory'},
-      {'icon': Icons.account_balance_wallet_outlined, 'label': 'Expenses', 'route': '/home/expenses'},
-      {'icon': Icons.timer_outlined, 'label': 'Focus', 'route': '/home/focus'},
-      {'icon': Icons.assessment_outlined, 'label': 'Weekly Review', 'route': '/home/weekly-review'},
-      {'icon': Icons.backpack_outlined, 'label': 'Pack Bag', 'route': '/home/packing'},
-      {'icon': Icons.visibility_outlined, 'label': 'Watch List', 'route': '/home/watchlist'},
+      _QuickAction(Icons.wb_sunny_outlined,       'Morning Brief',  () => _push(const BriefingScreen())),
+      _QuickAction(Icons.calendar_month_outlined,  'Calendar',       () => _push(const CalendarScreen())),
+      _QuickAction(Icons.task_outlined,            'Tasks',          () => _push(const TasksScreen())),
+      _QuickAction(Icons.self_improvement_outlined,'Habits',         () => _push(const HabitsScreen())),
+      _QuickAction(Icons.subscriptions_outlined,   'Renewals',       () => _push(const RenewalsScreen())),
+      _QuickAction(Icons.flight_outlined,          'Travel',         () => context.go('/travel')),
+      _QuickAction(Icons.psychology_outlined,      'Memory',         () => _push(const MemoryScreen())),
+      _QuickAction(Icons.account_balance_wallet_outlined, 'Expenses',() => _push(const ExpensesScreen())),
+      _QuickAction(Icons.timer_outlined,           'Focus',          () => _push(const FocusScreen())),
+      _QuickAction(Icons.assessment_outlined,      'Weekly Review',  () => _push(const WeeklyReviewScreen())),
+      _QuickAction(Icons.backpack_outlined,        'Pack Bag',       () => _push(const PackingScreen())),
+      _QuickAction(Icons.visibility_outlined,      'Watch List',     () => _push(const WatchlistScreen())),
     ];
 
     return Column(
@@ -250,9 +261,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: actions.length,
             itemBuilder: (_, i) {
-              final action = actions[i];
+              final a = actions[i];
               return GestureDetector(
-                onTap: () => context.go(action['route'] as String),
+                onTap: a.onTap,
                 child: Container(
                   width: 88,
                   margin: const EdgeInsets.only(right: 12),
@@ -271,11 +282,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           color: AppColors.accent.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(action['icon'] as IconData, color: AppColors.accent, size: 22),
+                        child: Icon(a.icon, color: AppColors.accent, size: 22),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        action['label'] as String,
+                        a.label,
                         style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                         textAlign: TextAlign.center,
                       ),
@@ -287,6 +298,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _push(Widget screen) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => screen,
+        transitionsBuilder: (_, anim, __, child) => SlideTransition(
+          position: Tween(
+            begin: const Offset(1.0, 0.0),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeInOutCubic)),
+          child: child,
+        ),
+      ),
     );
   }
 
@@ -581,4 +608,11 @@ class _InsightItem {
   final String text;
   final String route;
   const _InsightItem({required this.icon, required this.color, required this.text, required this.route});
+}
+
+class _QuickAction {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _QuickAction(this.icon, this.label, this.onTap);
 }
