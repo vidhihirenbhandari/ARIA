@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/theme/aria_color_scheme.dart';
 import '../../../../shared/models/aria_travel.dart';
+import '../../../../shared/providers/theme_provider.dart';
 import '../../data/travel_repository.dart';
 import '../widgets/travel_suggestion_card.dart';
 
@@ -161,88 +163,220 @@ class _TravelScreenState extends ConsumerState<TravelScreen> {
   }
 
   Widget _buildUpcomingTripFromBooking(TravelBooking booking) {
+    final themeIndex = ref.watch(themeIndexProvider);
+    final scheme = AriaColorScheme.presets[themeIndex.clamp(0, AriaColorScheme.presets.length - 1)];
+
     final airline = booking.details['airline'] as String? ?? '';
     final flightNumber = booking.details['flightNumber'] as String? ?? '';
     final from = booking.details['from'] as String? ?? '---';
     final to = booking.details['to'] as String? ?? '---';
+    final bookingRef = booking.details['bookingRef'] as String? ?? '';
     final dep = booking.departureTime;
-    final depTime =
-        '${dep.hour.toString().padLeft(2, '0')}:${dep.minute.toString().padLeft(2, '0')}';
     final arr = booking.arrivalTime;
+    final depTime = '${dep.hour.toString().padLeft(2, '0')}:${dep.minute.toString().padLeft(2, '0')}';
     final arrTime = arr != null
         ? '${arr.hour.toString().padLeft(2, '0')}:${arr.minute.toString().padLeft(2, '0')}'
         : '';
+    final duration = arr != null ? arr.difference(dep) : null;
+    final durationLabel = duration != null
+        ? '${duration.inHours}h ${(duration.inMinutes % 60).toString().padLeft(2, '0')}m'
+        : '';
+
+    const white = Colors.white;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1A2040), Color(0xFF0D1220)],
+        gradient: LinearGradient(
+          colors: [scheme.accent, scheme.accentSecondary],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.accent.withOpacity(0.2)),
+        border: Border.all(color: white.withOpacity(0.12)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.flight_takeoff_rounded, color: AppColors.accent, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Upcoming Trip', style: AppTextStyles.headlineSmall),
-                  Text(
-                    'Tomorrow · $airline $flightNumber',
-                    style: AppTextStyles.caption.copyWith(color: AppColors.accent),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildAirport(from, from, depTime),
-              Expanded(
-                child: Column(
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: List.generate(
-                        5,
-                        (i) => Expanded(
-                          child: Container(
-                            height: 1,
-                            color: i == 4
-                                ? Colors.transparent
-                                : AppColors.accent.withOpacity(0.3),
-                          ),
-                        ),
-                      ),
+                    Text(
+                      'Upcoming Trip',
+                      style: AppTextStyles.headlineSmall.copyWith(color: white),
                     ),
-                    const SizedBox(height: 4),
-                    Icon(Icons.flight, color: AppColors.accent, size: 16),
-                    if (arrTime.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(arrTime, style: AppTextStyles.caption),
-                    ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'Tomorrow · $airline $flightNumber',
+                      style: AppTextStyles.caption.copyWith(color: white.withOpacity(0.65)),
+                    ),
                   ],
                 ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline_rounded, color: white, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Confirmed',
+                        style: AppTextStyles.caption.copyWith(
+                          color: white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Dashed divider
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: List.generate(
+                40,
+                (i) => Expanded(
+                  child: Container(
+                    height: 1,
+                    color: i.isEven ? white.withOpacity(0.25) : Colors.transparent,
+                  ),
+                ),
               ),
-              _buildAirport(to, to, arrTime),
-            ],
+            ),
+          ),
+          // Flight route
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Departure
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      from,
+                      style: AppTextStyles.displaySmall.copyWith(
+                        color: white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      depTime,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                // Route line
+                Expanded(
+                  child: Column(
+                    children: [
+                      if (durationLabel.isNotEmpty)
+                        Text(
+                          durationLabel,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.caption.copyWith(color: white.withOpacity(0.65)),
+                        ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(height: 1, color: white.withOpacity(0.3)),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Transform.rotate(
+                              angle: 0,
+                              child: Icon(Icons.flight_rounded, color: white, size: 18),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(height: 1, color: white.withOpacity(0.3)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Arrival
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      to,
+                      style: AppTextStyles.displaySmall.copyWith(
+                        color: white,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      arrTime,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Bottom info row
+          if (bookingRef.isNotEmpty || airline.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+              child: Row(
+                children: [
+                  if (airline.isNotEmpty)
+                    _infoChip(Icons.airlines_rounded, airline),
+                  if (airline.isNotEmpty && bookingRef.isNotEmpty)
+                    const SizedBox(width: 8),
+                  if (bookingRef.isNotEmpty)
+                    _infoChip(Icons.confirmation_number_outlined, 'Ref: $bookingRef'),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white.withOpacity(0.8), size: 12),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              color: Colors.white.withOpacity(0.9),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
