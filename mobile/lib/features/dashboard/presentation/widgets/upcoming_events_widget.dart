@@ -13,6 +13,18 @@ class UpcomingEventsWidget extends StatelessWidget {
     if (events.isEmpty) {
       return _buildEmpty();
     }
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final todayItems = events.where((e) {
+      final d = DateTime(e.startTime.year, e.startTime.month, e.startTime.day);
+      return d == today;
+    }).toList();
+    final tomorrowItems = events.where((e) {
+      final d = DateTime(e.startTime.year, e.startTime.month, e.startTime.day);
+      return d == tomorrow;
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -20,7 +32,7 @@ class UpcomingEventsWidget extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              const Text("Today's Schedule", style: AppTextStyles.headlineSmall),
+              const Text('Upcoming', style: AppTextStyles.headlineSmall),
               const Spacer(),
               Text(
                 '${events.length} events',
@@ -30,8 +42,29 @@ class UpcomingEventsWidget extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...events.map((e) => _buildEventTile(e)),
+        if (todayItems.isNotEmpty) ...[
+          _buildDateLabel('Today'),
+          ...todayItems.map((e) => _buildEventTile(e)),
+        ],
+        if (tomorrowItems.isNotEmpty) ...[
+          _buildDateLabel('Tomorrow'),
+          ...tomorrowItems.map((e) => _buildEventTile(e)),
+        ],
       ],
+    );
+  }
+
+  Widget _buildDateLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+      child: Text(
+        label,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.textTertiary,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 

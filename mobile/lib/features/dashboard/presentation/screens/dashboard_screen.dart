@@ -42,10 +42,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final suggestionsAsync = ref.watch(pendingSuggestionsProvider);
     final allEvents = ref.watch(calendarEventsProvider);
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dayAfterTomorrow = today.add(const Duration(days: 2));
     final todayEvents = allEvents.where((e) {
-      return e.startTime.year == now.year &&
-          e.startTime.month == now.month &&
-          e.startTime.day == now.day &&
+      final eventDay = DateTime(e.startTime.year, e.startTime.month, e.startTime.day);
+      return !eventDay.isBefore(today) &&
+          eventDay.isBefore(dayAfterTomorrow) &&
           e.status == 'approved';
     }).toList()
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
